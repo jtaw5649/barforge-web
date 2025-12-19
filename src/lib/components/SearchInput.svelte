@@ -144,7 +144,7 @@
 		aria-label="Search modules"
 	/>
 	<div class="search-shortcut" aria-hidden="true">
-		<kbd>⌘</kbd><kbd>K</kbd>
+		<kbd>⌘</kbd><kbd>⇧</kbd><kbd>K</kbd>
 	</div>
 </form>
 
@@ -203,13 +203,13 @@
 		display: inline-flex;
 		align-items: center;
 		justify-content: center;
-		min-width: 20px;
-		height: 20px;
+		min-width: 22px;
+		height: 22px;
 		padding: 0 var(--space-xs);
 		background-color: var(--color-bg-elevated);
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-sm);
-		font-size: 0.65rem;
+		font-size: 0.7rem;
 		font-family: inherit;
 		color: var(--color-text-faint);
 	}

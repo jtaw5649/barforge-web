@@ -7,7 +7,7 @@
 	let { children }: { children: Snippet } = $props();
 
 	function handleKeydown(e: KeyboardEvent) {
-		if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+		if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key.toLowerCase() === 'k') {
 			e.preventDefault();
 			focusSearchInput();
 		}
