@@ -58,9 +58,9 @@
 					<path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" />
 				</svg>
 			</div>
-			<h2>Sign In Required</h2>
-			<p>You need to sign in to access your dashboard.</p>
-			<a href="/login" class="btn btn-primary">Sign In with GitHub</a>
+			<h2>Log In Required</h2>
+			<p>You need to log in to access your dashboard.</p>
+			<a href="/login" class="btn btn-primary">Log In with GitHub</a>
 		</div>
 	{:else}
 		<div class="dashboard">

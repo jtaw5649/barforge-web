@@ -64,7 +64,7 @@
 		{
 			id: 'login',
 			name: 'Login',
-			description: 'Sign in to your account',
+			description: 'Log in to your account',
 			type: 'page',
 			path: '/login',
 			icon: 'login'

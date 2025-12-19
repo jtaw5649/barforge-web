@@ -92,7 +92,7 @@
 				</a>
 				<button class="btn btn-small btn-ghost" onclick={() => signOut()}>Sign Out</button>
 			{:else}
-				<a href={loginUrl} class="btn btn-small btn-primary">Sign In</a>
+				<a href={loginUrl} class="btn btn-small btn-primary">Log In</a>
 			{/if}
 		</div>
 
@@ -153,7 +153,7 @@
 				<button class="mobile-link mobile-button" onclick={handleSignOut}>Sign Out</button>
 			{:else}
 				<div class="mobile-divider"></div>
-				<a href={loginUrl} class="btn btn-primary mobile-cta" onclick={closeMobileMenu}>Sign In</a>
+				<a href={loginUrl} class="btn btn-primary mobile-cta" onclick={closeMobileMenu}>Log In</a>
 			{/if}
 		</nav>
 	{/if}
