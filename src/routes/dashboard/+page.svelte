@@ -1,7 +1,11 @@
 <script lang="ts">
-	import { signOut } from '@auth/sveltekit/client';
 	import { API_BASE_URL } from '$lib';
 	import type { PageData } from './$types';
+	import Header from '$lib/components/Header.svelte';
+	import Footer from '$lib/components/Footer.svelte';
+	import Skeleton from '$lib/components/Skeleton.svelte';
+	import Badge from '$lib/components/Badge.svelte';
+	import { toast } from '$lib/stores/toast';
 
 	let { data }: { data: PageData } = $props();
 
@@ -38,11 +42,12 @@
 	let bio = $state('');
 	let websiteUrl = $state('');
 	let saving = $state(false);
-	let saveMessage: { type: 'success' | 'error'; text: string } | null = $state(null);
 
 	$effect(() => {
 		if (data.session?.user) {
 			fetchDashboardData();
+		} else {
+			loading = false;
 		}
 	});
 
@@ -74,7 +79,6 @@
 
 	async function saveProfile() {
 		saving = true;
-		saveMessage = null;
 
 		try {
 			const res = await fetch(`${API_BASE_URL}/api/v1/users/me`, {
@@ -89,7 +93,7 @@
 			});
 
 			if (res.ok) {
-				saveMessage = { type: 'success', text: 'Profile saved successfully!' };
+				toast.success('Profile saved successfully!');
 				if (profile) {
 					profile = {
 						...profile,
@@ -99,10 +103,10 @@
 					};
 				}
 			} else {
-				saveMessage = { type: 'error', text: 'Failed to save profile' };
+				toast.error('Failed to save profile');
 			}
-		} catch (e) {
-			saveMessage = { type: 'error', text: 'Network error' };
+		} catch {
+			toast.error('Network error');
 		} finally {
 			saving = false;
 		}
@@ -123,40 +127,85 @@
 	}
 </script>
 
-<main>
-	<header>
-		<a href="/" class="logo">Waybar Modules</a>
-		<div class="header-right">
-			{#if data.session?.user}
-				<a href="/upload" class="btn btn-small">Upload Module</a>
-				<span class="user-name">{data.session.user.name}</span>
-				<button class="btn btn-small" onclick={() => signOut()}>Sign Out</button>
-			{/if}
-		</div>
-	</header>
+<Header session={data.session} />
 
+<main id="main-content">
 	{#if !data.session?.user}
 		<div class="auth-required">
+			<div class="auth-icon">
+				<svg
+					viewBox="0 0 24 24"
+					width="48"
+					height="48"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="1.5"
+				>
+					<circle cx="12" cy="8" r="4" />
+					<path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" />
+				</svg>
+			</div>
 			<h2>Sign In Required</h2>
 			<p>You need to sign in to access your dashboard.</p>
 			<a href="/login" class="btn btn-primary">Sign In with GitHub</a>
 		</div>
 	{:else if loading}
-		<div class="loading">Loading dashboard...</div>
+		<div class="dashboard">
+			<aside class="sidebar">
+				<div class="user-card">
+					<Skeleton variant="avatar" class="avatar-skeleton" />
+					<div class="user-info">
+						<Skeleton variant="text" class="name-skeleton" />
+						<Skeleton variant="text" class="username-skeleton" />
+					</div>
+				</div>
+				<nav class="sidebar-nav">
+					<Skeleton variant="button" class="nav-skeleton" />
+					<Skeleton variant="button" class="nav-skeleton" />
+				</nav>
+			</aside>
+			<section class="content">
+				<Skeleton variant="text" class="title-skeleton" />
+				<div class="modules-list">
+					{#each Array(3) as _, i (i)}
+						<div class="module-row-skeleton">
+							<Skeleton variant="text" class="module-name-skeleton" />
+							<Skeleton variant="text" class="module-meta-skeleton" />
+						</div>
+					{/each}
+				</div>
+			</section>
+		</div>
 	{:else if error}
-		<div class="error">{error}</div>
+		<div class="error-state">{error}</div>
 	{:else}
 		<div class="dashboard">
 			<aside class="sidebar">
 				<div class="user-card">
 					{#if data.session.user.image}
 						<img src={data.session.user.image} alt="" class="avatar" />
+					{:else}
+						<div class="avatar-placeholder">
+							{data.session.user.name?.charAt(0).toUpperCase() || 'U'}
+						</div>
 					{/if}
 					<div class="user-info">
 						<p class="name">{profile?.display_name || data.session.user.name}</p>
 						<p class="username">@{profile?.username || ''}</p>
 						{#if profile?.verified_author}
-							<span class="verified">Verified Author</span>
+							<Badge variant="primary" size="sm">
+								<svg
+									viewBox="0 0 24 24"
+									width="10"
+									height="10"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+								>
+									<polyline points="20 6 9 17 4 12" />
+								</svg>
+								Verified
+							</Badge>
 						{/if}
 					</div>
 				</div>
@@ -167,6 +216,18 @@
 						class:active={activeTab === 'modules'}
 						onclick={() => (activeTab = 'modules')}
 					>
+						<svg
+							viewBox="0 0 24 24"
+							width="18"
+							height="18"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<rect x="3" y="3" width="18" height="18" rx="2" />
+							<line x1="3" y1="9" x2="21" y2="9" />
+							<line x1="9" y1="21" x2="9" y2="9" />
+						</svg>
 						My Modules
 					</button>
 					<button
@@ -174,6 +235,19 @@
 						class:active={activeTab === 'settings'}
 						onclick={() => (activeTab = 'settings')}
 					>
+						<svg
+							viewBox="0 0 24 24"
+							width="18"
+							height="18"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<circle cx="12" cy="12" r="3" />
+							<path
+								d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"
+							/>
+						</svg>
 						Settings
 					</button>
 				</nav>
@@ -194,18 +268,45 @@
 				{#if activeTab === 'modules'}
 					<div class="content-header">
 						<h1>My Modules</h1>
-						<a href="/upload" class="btn btn-primary">Upload New Module</a>
+						<a href="/upload" class="btn btn-primary">
+							<svg
+								viewBox="0 0 24 24"
+								width="18"
+								height="18"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+							>
+								<line x1="12" y1="5" x2="12" y2="19" />
+								<line x1="5" y1="12" x2="19" y2="12" />
+							</svg>
+							Upload New Module
+						</a>
 					</div>
 
 					{#if modules.length === 0}
 						<div class="empty-state">
+							<div class="empty-icon">
+								<svg
+									viewBox="0 0 24 24"
+									width="48"
+									height="48"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="1.5"
+								>
+									<rect x="3" y="3" width="18" height="18" rx="2" />
+									<line x1="3" y1="9" x2="21" y2="9" />
+									<line x1="9" y1="21" x2="9" y2="9" />
+								</svg>
+							</div>
 							<h3>No modules yet</h3>
 							<p>Start by uploading your first module to share with the community.</p>
 							<a href="/upload" class="btn btn-primary">Upload Module</a>
 						</div>
 					{:else}
 						<div class="modules-list">
-							{#each modules as module}
+							{#each modules as module (module.uuid)}
 								<a href="/modules/{encodeURIComponent(module.uuid)}" class="module-row">
 									<div class="module-info">
 										<h3>{module.name}</h3>
@@ -214,7 +315,21 @@
 									<div class="module-meta">
 										<span class="version">v{formatVersion(module.version)}</span>
 										<span class="category">{module.category}</span>
-										<span class="downloads">{formatDownloads(module.downloads)} downloads</span>
+										<span class="downloads">
+											<svg
+												viewBox="0 0 24 24"
+												width="14"
+												height="14"
+												fill="none"
+												stroke="currentColor"
+												stroke-width="2"
+											>
+												<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+												<polyline points="7 10 12 15 17 10" />
+												<line x1="12" y1="15" x2="12" y2="3" />
+											</svg>
+											{formatDownloads(module.downloads)}
+										</span>
 									</div>
 								</a>
 							{/each}
@@ -232,16 +347,6 @@
 							saveProfile();
 						}}
 					>
-						{#if saveMessage}
-							<div
-								class="message"
-								class:success={saveMessage.type === 'success'}
-								class:error={saveMessage.type === 'error'}
-							>
-								{saveMessage.text}
-							</div>
-						{/if}
-
 						<div class="form-group">
 							<label for="displayName">Display Name</label>
 							<input
@@ -281,16 +386,35 @@
 
 						<div class="form-actions">
 							<button type="submit" class="btn btn-primary" disabled={saving}>
-								{saving ? 'Saving...' : 'Save Changes'}
+								{#if saving}
+									<span class="spinner"></span>
+									Saving...
+								{:else}
+									Save Changes
+								{/if}
 							</button>
 						</div>
 					</form>
 
-					<div class="danger-zone">
+					<div class="profile-link-section">
 						<h3>Public Profile</h3>
 						<p>View your public profile as others see it.</p>
 						{#if profile?.username}
-							<a href="/users/{profile.username}" class="btn btn-secondary">View Public Profile</a>
+							<a href="/users/{profile.username}" class="btn btn-secondary">
+								<svg
+									viewBox="0 0 24 24"
+									width="16"
+									height="16"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+								>
+									<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
+									<polyline points="15 3 21 3 21 9" />
+									<line x1="10" y1="14" x2="21" y2="3" />
+								</svg>
+								View Public Profile
+							</a>
 						{/if}
 					</div>
 				{/if}
@@ -299,57 +423,39 @@
 	{/if}
 </main>
 
+<Footer />
+
 <style>
 	main {
-		min-height: 100vh;
-	}
-
-	header {
-		padding: var(--space-md) var(--space-2xl);
-		border-bottom: 1px solid var(--color-border);
+		flex: 1;
 		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		background-color: var(--color-bg-base);
-	}
-
-	.logo {
-		font-size: 1.25rem;
-		font-weight: 600;
-		color: var(--color-text-normal);
-		text-decoration: none;
-	}
-
-	.header-right {
-		display: flex;
-		align-items: center;
-		gap: var(--space-md);
-	}
-
-	.user-name {
-		color: var(--color-text-muted);
-		font-size: 0.875rem;
-	}
-
-	.btn-small {
-		padding: var(--space-sm) var(--space-md);
-		font-size: 0.875rem;
-		background-color: var(--color-bg-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-sm);
-		color: var(--color-text-normal);
-		text-decoration: none;
-	}
-
-	.btn-small:hover {
-		background-color: var(--color-bg-elevated);
+		flex-direction: column;
 	}
 
 	.auth-required,
-	.loading,
-	.error {
+	.error-state {
+		flex: 1;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
 		text-align: center;
 		padding: var(--space-3xl);
+	}
+
+	.auth-icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 80px;
+		height: 80px;
+		background-color: var(--color-bg-elevated);
+		border-radius: 50%;
+		margin-bottom: var(--space-lg);
+	}
+
+	.auth-icon svg {
+		color: var(--color-text-muted);
 	}
 
 	.auth-required h2 {
@@ -362,13 +468,17 @@
 	}
 
 	.btn {
-		display: inline-block;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-sm);
 		padding: var(--space-md) var(--space-xl);
 		border-radius: var(--radius-md);
 		font-weight: 500;
 		text-decoration: none;
 		border: none;
 		cursor: pointer;
+		transition: all var(--duration-fast) var(--ease-out);
 	}
 
 	.btn-primary {
@@ -377,7 +487,7 @@
 	}
 
 	.btn-primary:hover {
-		background-color: #4f6ce8;
+		background-color: #5068d9;
 	}
 
 	.btn-primary:disabled {
@@ -391,9 +501,13 @@
 		border: 1px solid var(--color-border);
 	}
 
+	.btn-secondary:hover {
+		background-color: var(--color-bg-elevated);
+	}
+
 	.dashboard {
 		display: flex;
-		min-height: calc(100vh - 60px);
+		flex: 1;
 	}
 
 	.sidebar {
@@ -419,6 +533,19 @@
 		border-radius: 50%;
 	}
 
+	.avatar-placeholder {
+		width: 48px;
+		height: 48px;
+		border-radius: 50%;
+		background: linear-gradient(135deg, var(--color-primary) 0%, #8b5cf6 100%);
+		color: white;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 1.25rem;
+		font-weight: 600;
+	}
+
 	.user-info .name {
 		font-weight: 600;
 		margin-bottom: var(--space-xs);
@@ -429,16 +556,6 @@
 		color: var(--color-text-muted);
 	}
 
-	.verified {
-		display: inline-block;
-		margin-top: var(--space-xs);
-		font-size: 0.75rem;
-		color: var(--color-primary);
-		background-color: var(--color-bg-elevated);
-		padding: var(--space-xs) var(--space-sm);
-		border-radius: var(--radius-sm);
-	}
-
 	.sidebar-nav {
 		display: flex;
 		flex-direction: column;
@@ -447,7 +564,9 @@
 	}
 
 	.nav-item {
-		display: block;
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
 		padding: var(--space-md);
 		border-radius: var(--radius-md);
 		font-size: 0.875rem;
@@ -456,7 +575,7 @@
 		border: none;
 		color: var(--color-text-muted);
 		cursor: pointer;
-		transition: all 0.15s ease;
+		transition: all var(--duration-fast) var(--ease-out);
 	}
 
 	.nav-item:hover {
@@ -520,6 +639,21 @@
 		border-radius: var(--radius-lg);
 	}
 
+	.empty-icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 80px;
+		height: 80px;
+		background-color: var(--color-bg-elevated);
+		border-radius: 50%;
+		margin-bottom: var(--space-lg);
+	}
+
+	.empty-icon svg {
+		color: var(--color-text-muted);
+	}
+
 	.empty-state h3 {
 		margin-bottom: var(--space-md);
 	}
@@ -545,7 +679,7 @@
 		border-radius: var(--radius-lg);
 		text-decoration: none;
 		color: inherit;
-		transition: all 0.15s ease;
+		transition: all var(--duration-fast) var(--ease-out);
 	}
 
 	.module-row:hover {
@@ -561,18 +695,19 @@
 	.module-uuid {
 		font-size: 0.75rem;
 		color: var(--color-text-faint);
-		font-family: monospace;
+		font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
 	}
 
 	.module-meta {
 		display: flex;
+		align-items: center;
 		gap: var(--space-md);
 		font-size: 0.75rem;
 		color: var(--color-text-muted);
 	}
 
 	.version {
-		font-family: monospace;
+		font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
 	}
 
 	.category {
@@ -581,30 +716,18 @@
 		border-radius: var(--radius-sm);
 	}
 
+	.downloads {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-xs);
+	}
+
 	.settings-form {
 		background-color: var(--color-bg-surface);
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-lg);
 		padding: var(--space-xl);
 		margin-bottom: var(--space-xl);
-	}
-
-	.message {
-		padding: var(--space-md);
-		border-radius: var(--radius-md);
-		margin-bottom: var(--space-lg);
-	}
-
-	.message.success {
-		background-color: rgba(16, 185, 129, 0.1);
-		color: #10b981;
-		border: 1px solid rgba(16, 185, 129, 0.2);
-	}
-
-	.message.error {
-		background-color: rgba(239, 68, 68, 0.1);
-		color: var(--color-error);
-		border: 1px solid rgba(239, 68, 68, 0.2);
 	}
 
 	.form-group {
@@ -626,12 +749,14 @@
 		border-radius: var(--radius-md);
 		color: var(--color-text-normal);
 		font-size: 0.875rem;
+		transition: border-color var(--duration-fast) var(--ease-out);
 	}
 
 	.form-group input:focus,
 	.form-group textarea:focus {
 		outline: none;
 		border-color: var(--color-primary);
+		box-shadow: 0 0 0 3px rgba(97, 125, 250, 0.15);
 	}
 
 	.help-text {
@@ -644,23 +769,86 @@
 		margin-top: var(--space-xl);
 	}
 
-	.danger-zone {
+	.profile-link-section {
 		background-color: var(--color-bg-surface);
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-lg);
 		padding: var(--space-xl);
 	}
 
-	.danger-zone h3 {
+	.profile-link-section h3 {
 		font-size: 1rem;
 		font-weight: 600;
 		margin-bottom: var(--space-sm);
 	}
 
-	.danger-zone p {
+	.profile-link-section p {
 		font-size: 0.875rem;
 		color: var(--color-text-muted);
 		margin-bottom: var(--space-md);
+	}
+
+	.spinner {
+		width: 16px;
+		height: 16px;
+		border: 2px solid rgba(255, 255, 255, 0.3);
+		border-top-color: white;
+		border-radius: 50%;
+		animation: spin 0.8s linear infinite;
+	}
+
+	@keyframes spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	.sidebar :global(.avatar-skeleton) {
+		width: 48px;
+		height: 48px;
+		border-radius: 50%;
+	}
+
+	.sidebar :global(.name-skeleton) {
+		width: 120px;
+		height: 18px;
+		margin-bottom: var(--space-xs);
+	}
+
+	.sidebar :global(.username-skeleton) {
+		width: 80px;
+		height: 14px;
+	}
+
+	.sidebar :global(.nav-skeleton) {
+		width: 100%;
+		height: 42px;
+		margin-bottom: var(--space-xs);
+	}
+
+	.content :global(.title-skeleton) {
+		width: 150px;
+		height: 28px;
+		margin-bottom: var(--space-xl);
+	}
+
+	.module-row-skeleton {
+		background-color: var(--color-bg-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		padding: var(--space-lg);
+		margin-bottom: var(--space-md);
+	}
+
+	.module-row-skeleton :global(.module-name-skeleton) {
+		width: 200px;
+		height: 20px;
+		margin-bottom: var(--space-sm);
+	}
+
+	.module-row-skeleton :global(.module-meta-skeleton) {
+		width: 300px;
+		height: 14px;
 	}
 
 	@media (max-width: 768px) {
@@ -676,6 +864,12 @@
 
 		.content {
 			padding: var(--space-lg);
+		}
+
+		.content-header {
+			flex-direction: column;
+			align-items: flex-start;
+			gap: var(--space-md);
 		}
 
 		.module-row {

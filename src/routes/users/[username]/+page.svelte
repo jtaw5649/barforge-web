@@ -1,6 +1,11 @@
 <script lang="ts">
 	import { page } from '$app/stores';
 	import { API_BASE_URL } from '$lib';
+	import Header from '$lib/components/Header.svelte';
+	import Footer from '$lib/components/Footer.svelte';
+	import Badge from '$lib/components/Badge.svelte';
+	import ModuleCard from '$lib/components/ModuleCard.svelte';
+	import Skeleton from '$lib/components/Skeleton.svelte';
 
 	interface UserProfile {
 		id: number;
@@ -68,11 +73,6 @@
 		}
 	}
 
-	function formatDownloads(n: number): string {
-		if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
-		return n.toString();
-	}
-
 	function formatDate(dateStr: string): string {
 		return new Date(dateStr).toLocaleDateString('en-US', {
 			year: 'numeric',
@@ -81,17 +81,57 @@
 	}
 </script>
 
-<main>
-	<nav class="breadcrumb">
+<Header session={null} />
+
+<main id="main-content">
+	<nav class="breadcrumb" aria-label="Breadcrumb">
 		<a href="/">Home</a>
-		<span>/</span>
+		<span aria-hidden="true">/</span>
 		<span>User Profile</span>
 	</nav>
 
 	{#if loading}
-		<div class="loading">Loading profile...</div>
+		<div class="profile-skeleton">
+			<header class="profile-header">
+				<div class="profile-info">
+					<Skeleton variant="avatar" class="avatar-skeleton" />
+					<div class="profile-details">
+						<Skeleton variant="text" class="name-skeleton" />
+						<Skeleton variant="text" class="username-skeleton" />
+						<Skeleton variant="text" class="bio-skeleton" />
+						<Skeleton variant="text" class="bio-skeleton" />
+					</div>
+				</div>
+			</header>
+			<section class="modules-section">
+				<Skeleton variant="text" class="section-title-skeleton" />
+				<div class="grid">
+					{#each Array(3) as _, i (i)}
+						<div class="card-skeleton">
+							<Skeleton variant="text" class="card-title-skeleton" />
+							<Skeleton variant="text" class="card-desc-skeleton" />
+							<Skeleton variant="text" class="card-desc-skeleton" />
+						</div>
+					{/each}
+				</div>
+			</section>
+		</div>
 	{:else if error}
-		<div class="error">
+		<div class="error-state">
+			<div class="error-icon">
+				<svg
+					viewBox="0 0 24 24"
+					width="48"
+					height="48"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="1.5"
+				>
+					<circle cx="12" cy="12" r="10" />
+					<line x1="12" y1="8" x2="12" y2="12" />
+					<line x1="12" y1="16" x2="12.01" y2="16" />
+				</svg>
+			</div>
 			<h2>Error</h2>
 			<p>{error}</p>
 			<a href="/" class="btn btn-primary">Go Home</a>
@@ -100,15 +140,29 @@
 		<header class="profile-header">
 			<div class="profile-info">
 				{#if profile.avatar_url}
-					<img src={profile.avatar_url} alt={profile.username} class="avatar" />
+					<img src={profile.avatar_url} alt="" class="avatar" />
 				{:else}
-					<div class="avatar-placeholder">{profile.username.charAt(0).toUpperCase()}</div>
+					<div class="avatar-placeholder" aria-hidden="true">
+						{profile.username.charAt(0).toUpperCase()}
+					</div>
 				{/if}
 				<div class="profile-details">
 					<div class="name-row">
 						<h1>{profile.display_name || profile.username}</h1>
 						{#if profile.verified_author}
-							<span class="verified" title="Verified Author">&#10003; Verified</span>
+							<Badge variant="primary" size="sm">
+								<svg
+									viewBox="0 0 24 24"
+									width="12"
+									height="12"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+								>
+									<polyline points="20 6 9 17 4 12" />
+								</svg>
+								Verified
+							</Badge>
 						{/if}
 					</div>
 					<p class="username">@{profile.username}</p>
@@ -117,9 +171,34 @@
 					{/if}
 					<div class="profile-meta">
 						<span class="meta-item">
+							<svg
+								viewBox="0 0 24 24"
+								width="16"
+								height="16"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+							>
+								<rect x="3" y="3" width="18" height="18" rx="2" />
+								<line x1="3" y1="9" x2="21" y2="9" />
+								<line x1="9" y1="21" x2="9" y2="9" />
+							</svg>
 							<strong>{profile.module_count}</strong> modules
 						</span>
 						<span class="meta-item">
+							<svg
+								viewBox="0 0 24 24"
+								width="16"
+								height="16"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+							>
+								<rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+								<line x1="16" y1="2" x2="16" y2="6" />
+								<line x1="8" y1="2" x2="8" y2="6" />
+								<line x1="3" y1="10" x2="21" y2="10" />
+							</svg>
 							Member since {formatDate(profile.created_at)}
 						</span>
 						{#if profile.website_url}
@@ -129,6 +208,20 @@
 								rel="noopener noreferrer"
 								class="website-link"
 							>
+								<svg
+									viewBox="0 0 24 24"
+									width="16"
+									height="16"
+									fill="none"
+									stroke="currentColor"
+									stroke-width="2"
+								>
+									<circle cx="12" cy="12" r="10" />
+									<line x1="2" y1="12" x2="22" y2="12" />
+									<path
+										d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
+									/>
+								</svg>
 								{profile.website_url.replace(/^https?:\/\//, '')}
 							</a>
 						{/if}
@@ -141,24 +234,33 @@
 			<h2>Modules by {profile.display_name || profile.username}</h2>
 			{#if modules.length === 0}
 				<div class="empty-state">
+					<svg
+						viewBox="0 0 24 24"
+						width="48"
+						height="48"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.5"
+					>
+						<rect x="3" y="3" width="18" height="18" rx="2" />
+						<line x1="3" y1="9" x2="21" y2="9" />
+						<line x1="9" y1="21" x2="9" y2="9" />
+					</svg>
 					<p>No modules published yet</p>
 				</div>
 			{:else}
 				<div class="grid">
-					{#each modules as module}
-						<a href="/modules/{encodeURIComponent(module.uuid)}" class="card">
-							<div class="card-header">
-								<h3>{module.name}</h3>
-								{#if module.verified_author}
-									<span class="verified-badge" title="Verified Author">&#10003;</span>
-								{/if}
-							</div>
-							<p class="description">{module.description}</p>
-							<div class="meta">
-								<span class="category">{module.category}</span>
-								<span class="downloads">{formatDownloads(module.downloads)} downloads</span>
-							</div>
-						</a>
+					{#each modules as module, i (module.uuid)}
+						<ModuleCard
+							uuid={module.uuid}
+							name={module.name}
+							author={module.author}
+							description={module.description}
+							category={module.category}
+							downloads={module.downloads}
+							verified={module.verified_author}
+							delay={i * 50}
+						/>
 					{/each}
 				</div>
 			{/if}
@@ -166,12 +268,15 @@
 	{/if}
 </main>
 
+<Footer />
+
 <style>
 	main {
-		min-height: 100vh;
+		flex: 1;
 		max-width: 1200px;
 		margin: 0 auto;
 		padding: var(--space-xl);
+		width: 100%;
 	}
 
 	.breadcrumb {
@@ -191,33 +296,54 @@
 		text-decoration: underline;
 	}
 
-	.loading,
-	.error {
+	.error-state {
 		text-align: center;
 		padding: var(--space-3xl);
 	}
 
-	.error h2 {
+	.error-icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 80px;
+		height: 80px;
+		background-color: rgba(239, 68, 68, 0.1);
+		border-radius: 50%;
+		margin-bottom: var(--space-lg);
+	}
+
+	.error-icon svg {
+		color: var(--color-error);
+	}
+
+	.error-state h2 {
 		margin-bottom: var(--space-md);
 		color: var(--color-error);
 	}
 
-	.error p {
+	.error-state p {
 		margin-bottom: var(--space-xl);
 		color: var(--color-text-muted);
 	}
 
 	.btn {
-		display: inline-block;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
 		padding: var(--space-md) var(--space-xl);
 		border-radius: var(--radius-md);
 		font-weight: 500;
 		text-decoration: none;
+		transition: all var(--duration-fast) var(--ease-out);
 	}
 
 	.btn-primary {
 		background-color: var(--color-primary);
 		color: white;
+	}
+
+	.btn-primary:hover {
+		background-color: #5068d9;
 	}
 
 	.profile-header {
@@ -239,13 +365,14 @@
 		height: 120px;
 		border-radius: 50%;
 		flex-shrink: 0;
+		border: 3px solid var(--color-border);
 	}
 
 	.avatar-placeholder {
 		width: 120px;
 		height: 120px;
 		border-radius: 50%;
-		background-color: var(--color-primary);
+		background: linear-gradient(135deg, var(--color-primary) 0%, #8b5cf6 100%);
 		color: white;
 		display: flex;
 		align-items: center;
@@ -264,6 +391,7 @@
 		align-items: center;
 		gap: var(--space-md);
 		margin-bottom: var(--space-xs);
+		flex-wrap: wrap;
 	}
 
 	.name-row h1 {
@@ -271,18 +399,9 @@
 		font-weight: 700;
 	}
 
-	.verified {
-		background-color: var(--color-primary);
-		color: white;
-		padding: var(--space-xs) var(--space-sm);
-		border-radius: var(--radius-sm);
-		font-size: 0.75rem;
-		font-weight: 500;
-	}
-
 	.username {
 		color: var(--color-text-muted);
-		font-size: 0.875rem;
+		font-size: 0.9375rem;
 		margin-bottom: var(--space-md);
 	}
 
@@ -301,11 +420,24 @@
 		color: var(--color-text-muted);
 	}
 
+	.meta-item {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-xs);
+	}
+
 	.meta-item strong {
 		color: var(--color-text-normal);
 	}
 
+	.meta-item svg {
+		opacity: 0.6;
+	}
+
 	.website-link {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-xs);
 		color: var(--color-primary);
 		text-decoration: none;
 	}
@@ -326,11 +458,16 @@
 
 	.empty-state {
 		text-align: center;
-		padding: var(--space-2xl);
+		padding: var(--space-3xl);
 		background-color: var(--color-bg-surface);
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-lg);
 		color: var(--color-text-muted);
+	}
+
+	.empty-state svg {
+		margin-bottom: var(--space-md);
+		opacity: 0.4;
 	}
 
 	.grid {
@@ -339,62 +476,58 @@
 		gap: var(--space-lg);
 	}
 
-	.card {
-		display: block;
-		padding: var(--space-lg);
+	.profile-skeleton .profile-header {
+		margin-bottom: var(--space-2xl);
+	}
+
+	.profile-skeleton :global(.avatar-skeleton) {
+		width: 120px;
+		height: 120px;
+		border-radius: 50%;
+	}
+
+	.profile-skeleton :global(.name-skeleton) {
+		width: 200px;
+		height: 28px;
+		margin-bottom: var(--space-sm);
+	}
+
+	.profile-skeleton :global(.username-skeleton) {
+		width: 120px;
+		height: 18px;
+		margin-bottom: var(--space-md);
+	}
+
+	.profile-skeleton :global(.bio-skeleton) {
+		width: 100%;
+		max-width: 400px;
+		height: 16px;
+		margin-bottom: var(--space-sm);
+	}
+
+	.profile-skeleton :global(.section-title-skeleton) {
+		width: 200px;
+		height: 24px;
+		margin-bottom: var(--space-lg);
+	}
+
+	.card-skeleton {
 		background-color: var(--color-bg-surface);
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-lg);
-		color: inherit;
-		text-decoration: none;
-		transition: all 0.15s ease;
+		padding: var(--space-lg);
 	}
 
-	.card:hover {
-		border-color: var(--color-primary);
-		background-color: var(--color-bg-elevated);
-		text-decoration: none;
-	}
-
-	.card-header {
-		display: flex;
-		align-items: center;
-		gap: var(--space-sm);
+	.card-skeleton :global(.card-title-skeleton) {
+		width: 60%;
+		height: 20px;
 		margin-bottom: var(--space-md);
 	}
 
-	.card h3 {
-		font-size: 1.125rem;
-		font-weight: 600;
-	}
-
-	.verified-badge {
-		color: var(--color-primary);
-		font-size: 0.875rem;
-	}
-
-	.card .description {
-		font-size: 0.875rem;
-		color: var(--color-text-muted);
-		margin-bottom: var(--space-md);
-		display: -webkit-box;
-		-webkit-line-clamp: 2;
-		-webkit-box-orient: vertical;
-		overflow: hidden;
-		line-height: 1.5;
-	}
-
-	.card .meta {
-		display: flex;
-		gap: var(--space-md);
-		font-size: 0.75rem;
-		color: var(--color-text-faint);
-	}
-
-	.category {
-		background-color: var(--color-bg-base);
-		padding: var(--space-xs) var(--space-sm);
-		border-radius: var(--radius-sm);
+	.card-skeleton :global(.card-desc-skeleton) {
+		width: 100%;
+		height: 14px;
+		margin-bottom: var(--space-sm);
 	}
 
 	@media (max-width: 768px) {

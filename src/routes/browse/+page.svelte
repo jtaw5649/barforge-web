@@ -1,5 +1,16 @@
 <script lang="ts">
+	import { SvelteURLSearchParams } from 'svelte/reactivity';
+	import { page } from '$app/stores';
+	import { goto } from '$app/navigation';
 	import { API_BASE_URL } from '$lib';
+	import type { PageData } from './$types';
+	import Header from '$lib/components/Header.svelte';
+	import Footer from '$lib/components/Footer.svelte';
+	import ModuleCard from '$lib/components/ModuleCard.svelte';
+	import ModuleCardSkeleton from '$lib/components/ModuleCardSkeleton.svelte';
+	import SearchInput from '$lib/components/SearchInput.svelte';
+
+	let { data }: { data: PageData } = $props();
 
 	interface Module {
 		uuid: string;
@@ -9,22 +20,52 @@
 		category: string;
 		downloads: number;
 		rating: number | null;
+		verified_author: boolean;
 	}
 
-	let modules: Module[] = $state([]);
+	const categories = [
+		{ name: 'All', slug: '' },
+		{ name: 'System', slug: 'system' },
+		{ name: 'Hardware', slug: 'hardware' },
+		{ name: 'Network', slug: 'network' },
+		{ name: 'Media', slug: 'media' },
+		{ name: 'Workspace', slug: 'workspace' },
+		{ name: 'Clock', slug: 'clock' },
+		{ name: 'Weather', slug: 'weather' },
+		{ name: 'Custom', slug: 'custom' }
+	];
+
+	const sortOptions = [
+		{ name: 'Most Popular', value: 'popular' },
+		{ name: 'Recently Added', value: 'recent' },
+		{ name: 'Most Downloads', value: 'downloads' },
+		{ name: 'Alphabetical', value: 'alpha' }
+	];
+
+	const ITEMS_PER_PAGE = 12;
+
+	let allModules: Module[] = $state([]);
 	let loading = $state(true);
 	let error: string | null = $state(null);
+
+	let searchQuery = $state($page.url.searchParams.get('q') || '');
+	let selectedCategory = $state($page.url.searchParams.get('category') || '');
+	let selectedSort = $state($page.url.searchParams.get('sort') || 'popular');
+	let currentPage = $state(parseInt($page.url.searchParams.get('page') || '1'));
+
+	let mobileFiltersOpen = $state(false);
 
 	$effect(() => {
 		fetchModules();
 	});
 
 	async function fetchModules() {
+		loading = true;
 		try {
 			const res = await fetch(`${API_BASE_URL}/api/v1/index`);
 			if (!res.ok) throw new Error('Failed to fetch modules');
 			const data = await res.json();
-			modules = data.modules || [];
+			allModules = data.modules || [];
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Unknown error';
 		} finally {
@@ -32,134 +73,610 @@
 		}
 	}
 
-	function formatDownloads(n: number): string {
-		if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
-		return n.toString();
+	const filteredModules = $derived.by(() => {
+		let result = [...allModules];
+
+		if (searchQuery) {
+			const query = searchQuery.toLowerCase();
+			result = result.filter(
+				(m) =>
+					m.name.toLowerCase().includes(query) ||
+					m.description.toLowerCase().includes(query) ||
+					m.author.toLowerCase().includes(query)
+			);
+		}
+
+		if (selectedCategory) {
+			result = result.filter((m) => m.category.toLowerCase() === selectedCategory.toLowerCase());
+		}
+
+		switch (selectedSort) {
+			case 'popular':
+			case 'downloads':
+				result.sort((a, b) => b.downloads - a.downloads);
+				break;
+			case 'recent':
+				result.reverse();
+				break;
+			case 'alpha':
+				result.sort((a, b) => a.name.localeCompare(b.name));
+				break;
+		}
+
+		return result;
+	});
+
+	const totalPages = $derived(Math.ceil(filteredModules.length / ITEMS_PER_PAGE));
+
+	const paginatedModules = $derived(
+		filteredModules.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE)
+	);
+
+	function updateUrl() {
+		const params = new SvelteURLSearchParams();
+		if (searchQuery) params.set('q', searchQuery);
+		if (selectedCategory) params.set('category', selectedCategory);
+		if (selectedSort !== 'popular') params.set('sort', selectedSort);
+		if (currentPage > 1) params.set('page', currentPage.toString());
+
+		const newUrl = params.toString() ? `/browse?${params.toString()}` : '/browse';
+		goto(newUrl, { replaceState: true, noScroll: true });
+	}
+
+	function handleSearch(query: string) {
+		searchQuery = query;
+		currentPage = 1;
+		updateUrl();
+	}
+
+	function handleCategoryChange(slug: string) {
+		selectedCategory = slug;
+		currentPage = 1;
+		updateUrl();
+		mobileFiltersOpen = false;
+	}
+
+	function handleSortChange(e: Event) {
+		selectedSort = (e.target as HTMLSelectElement).value;
+		currentPage = 1;
+		updateUrl();
+	}
+
+	function handlePageChange(page: number) {
+		if (page < 1 || page > totalPages) return;
+		currentPage = page;
+		updateUrl();
+		window.scrollTo({ top: 0, behavior: 'smooth' });
+	}
+
+	function getPageNumbers(): (number | 'ellipsis')[] {
+		if (totalPages <= 7) {
+			return Array.from({ length: totalPages }, (_, i) => i + 1);
+		}
+
+		const pages: (number | 'ellipsis')[] = [1];
+
+		if (currentPage > 3) {
+			pages.push('ellipsis');
+		}
+
+		const start = Math.max(2, currentPage - 1);
+		const end = Math.min(totalPages - 1, currentPage + 1);
+
+		for (let i = start; i <= end; i++) {
+			pages.push(i);
+		}
+
+		if (currentPage < totalPages - 2) {
+			pages.push('ellipsis');
+		}
+
+		pages.push(totalPages);
+
+		return pages;
 	}
 </script>
 
-<main>
-	<header>
-		<h1>Browse Modules</h1>
-		<p>Discover community-created modules for Waybar</p>
-	</header>
+<Header session={data.session} />
 
-	<section class="content">
-		{#if loading}
-			<div class="loading">Loading modules...</div>
-		{:else if error}
-			<div class="error">{error}</div>
-		{:else if modules.length === 0}
-			<div class="empty">No modules found</div>
-		{:else}
-			<div class="grid">
-				{#each modules as module}
-					<a href="/modules/{module.uuid}" class="card">
-						<h3>{module.name}</h3>
-						<p class="author">by {module.author}</p>
-						<p class="description">{module.description}</p>
-						<div class="meta">
-							<span class="category">{module.category}</span>
-							<span class="downloads">{formatDownloads(module.downloads)} downloads</span>
-						</div>
-					</a>
-				{/each}
+<main id="main-content">
+	<div class="browse-header">
+		<div class="browse-header-content">
+			<div class="browse-header-text">
+				<h1>Browse Modules</h1>
+				<p>Discover {filteredModules.length} community-created modules for Waybar</p>
 			</div>
-		{/if}
-	</section>
+			<div class="browse-search">
+				<SearchInput
+					value={searchQuery}
+					placeholder="Search modules..."
+					size="md"
+					onsubmit={handleSearch}
+				/>
+			</div>
+		</div>
+	</div>
+
+	<div class="browse-layout">
+		<button
+			class="mobile-filter-toggle"
+			onclick={() => (mobileFiltersOpen = !mobileFiltersOpen)}
+			aria-expanded={mobileFiltersOpen}
+		>
+			<svg
+				width="18"
+				height="18"
+				viewBox="0 0 24 24"
+				fill="none"
+				stroke="currentColor"
+				stroke-width="2"
+			>
+				<polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" />
+			</svg>
+			Filters
+		</button>
+
+		<aside class="filter-sidebar" class:open={mobileFiltersOpen}>
+			<div class="filter-section">
+				<h3>Category</h3>
+				<div class="filter-options">
+					{#each categories as cat (cat.slug)}
+						<button
+							class="filter-option"
+							class:active={selectedCategory === cat.slug}
+							onclick={() => handleCategoryChange(cat.slug)}
+						>
+							{cat.name}
+						</button>
+					{/each}
+				</div>
+			</div>
+
+			<div class="filter-section">
+				<h3>Sort By</h3>
+				<select class="sort-select" value={selectedSort} onchange={handleSortChange}>
+					{#each sortOptions as opt (opt.value)}
+						<option value={opt.value}>{opt.name}</option>
+					{/each}
+				</select>
+			</div>
+		</aside>
+
+		<section class="results">
+			{#if loading}
+				<div class="grid">
+					{#each Array(6) as _, i (i)}
+						<ModuleCardSkeleton />
+					{/each}
+				</div>
+			{:else if error}
+				<div class="empty-state">
+					<p class="error">{error}</p>
+					<button class="btn btn-primary" onclick={() => fetchModules()}>Try Again</button>
+				</div>
+			{:else if paginatedModules.length === 0}
+				<div class="empty-state">
+					<svg
+						width="48"
+						height="48"
+						viewBox="0 0 24 24"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.5"
+					>
+						<circle cx="11" cy="11" r="8" />
+						<line x1="21" y1="21" x2="16.65" y2="16.65" />
+					</svg>
+					<h2>No modules found</h2>
+					<p>Try adjusting your search or filters</p>
+					{#if searchQuery || selectedCategory}
+						<button
+							class="btn btn-secondary"
+							onclick={() => {
+								searchQuery = '';
+								selectedCategory = '';
+								currentPage = 1;
+								updateUrl();
+							}}
+						>
+							Clear Filters
+						</button>
+					{/if}
+				</div>
+			{:else}
+				<div class="grid">
+					{#each paginatedModules as module, i (module.uuid)}
+						<ModuleCard
+							uuid={module.uuid}
+							name={module.name}
+							author={module.author}
+							description={module.description}
+							category={module.category}
+							downloads={module.downloads}
+							verified={module.verified_author}
+							delay={i * 30}
+						/>
+					{/each}
+				</div>
+
+				{#if totalPages > 1}
+					<nav class="pagination" aria-label="Pagination">
+						<button
+							class="pagination-btn"
+							disabled={currentPage === 1}
+							onclick={() => handlePageChange(currentPage - 1)}
+							aria-label="Previous page"
+						>
+							<svg
+								width="16"
+								height="16"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+							>
+								<polyline points="15 18 9 12 15 6" />
+							</svg>
+							<span class="pagination-label">Previous</span>
+						</button>
+
+						<div class="pagination-pages">
+							{#each getPageNumbers() as pageNum, i (i)}
+								{#if pageNum === 'ellipsis'}
+									<span class="pagination-ellipsis" aria-hidden="true">...</span>
+								{:else}
+									<button
+										class="pagination-page"
+										class:active={pageNum === currentPage}
+										onclick={() => handlePageChange(pageNum)}
+										aria-current={pageNum === currentPage ? 'page' : undefined}
+									>
+										{pageNum}
+									</button>
+								{/if}
+							{/each}
+						</div>
+
+						<button
+							class="pagination-btn"
+							disabled={currentPage === totalPages}
+							onclick={() => handlePageChange(currentPage + 1)}
+							aria-label="Next page"
+						>
+							<span class="pagination-label">Next</span>
+							<svg
+								width="16"
+								height="16"
+								viewBox="0 0 24 24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+							>
+								<polyline points="9 18 15 12 9 6" />
+							</svg>
+						</button>
+					</nav>
+				{/if}
+			{/if}
+		</section>
+	</div>
 </main>
+
+<Footer />
 
 <style>
 	main {
 		min-height: 100vh;
+		display: flex;
+		flex-direction: column;
 	}
 
-	header {
+	.browse-header {
 		padding: var(--space-xl) var(--space-2xl);
 		border-bottom: 1px solid var(--color-border);
-	}
-
-	header h1 {
-		font-size: 1.5rem;
-		font-weight: 600;
-	}
-
-	header p {
-		color: var(--color-text-muted);
-		font-size: 0.875rem;
-	}
-
-	.content {
-		padding: var(--space-2xl);
-	}
-
-	.loading,
-	.error,
-	.empty {
-		text-align: center;
-		padding: var(--space-2xl);
-		color: var(--color-text-muted);
-	}
-
-	.error {
-		color: var(--color-error);
-	}
-
-	.grid {
-		display: grid;
-		grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-		gap: var(--space-lg);
-	}
-
-	.card {
-		display: block;
-		padding: var(--space-lg);
 		background-color: var(--color-bg-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		color: inherit;
-		text-decoration: none;
-		transition: all 0.15s ease;
 	}
 
-	.card:hover {
-		border-color: var(--color-primary);
-		background-color: var(--color-bg-elevated);
-		text-decoration: none;
+	.browse-header-content {
+		max-width: 1400px;
+		margin: 0 auto;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		gap: var(--space-xl);
+		flex-wrap: wrap;
 	}
 
-	.card h3 {
-		font-size: 1.125rem;
+	.browse-header-text h1 {
+		font-size: 1.75rem;
 		font-weight: 600;
 		margin-bottom: var(--space-xs);
 	}
 
-	.card .author {
-		font-size: 0.75rem;
-		color: var(--color-text-faint);
-		margin-bottom: var(--space-md);
+	.browse-header-text p {
+		color: var(--color-text-muted);
+		font-size: 0.9rem;
 	}
 
-	.card .description {
-		font-size: 0.875rem;
+	.browse-search {
+		flex: 1;
+		max-width: 400px;
+		min-width: 250px;
+	}
+
+	.browse-layout {
+		display: grid;
+		grid-template-columns: 240px 1fr;
+		gap: var(--space-2xl);
+		max-width: 1400px;
+		margin: 0 auto;
+		padding: var(--space-2xl);
+		width: 100%;
+	}
+
+	.mobile-filter-toggle {
+		display: none;
+	}
+
+	.filter-sidebar {
+		position: sticky;
+		top: 80px;
+		height: fit-content;
+	}
+
+	.filter-section {
+		margin-bottom: var(--space-xl);
+	}
+
+	.filter-section h3 {
+		font-size: 0.75rem;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.05em;
 		color: var(--color-text-muted);
 		margin-bottom: var(--space-md);
-		display: -webkit-box;
-		-webkit-line-clamp: 2;
-		-webkit-box-orient: vertical;
-		overflow: hidden;
 	}
 
-	.card .meta {
+	.filter-options {
 		display: flex;
-		gap: var(--space-md);
-		font-size: 0.75rem;
-		color: var(--color-text-faint);
+		flex-direction: column;
+		gap: var(--space-xs);
 	}
 
-	.category {
-		background-color: var(--color-bg-base);
-		padding: var(--space-xs) var(--space-sm);
-		border-radius: var(--radius-sm);
+	.filter-option {
+		padding: var(--space-sm) var(--space-md);
+		background: none;
+		border: none;
+		border-radius: var(--radius-md);
+		color: var(--color-text-muted);
+		font-size: 0.9rem;
+		text-align: left;
+		cursor: pointer;
+		transition: all var(--duration-fast) var(--ease-out);
+	}
+
+	.filter-option:hover {
+		background-color: var(--color-bg-surface);
+		color: var(--color-text-normal);
+	}
+
+	.filter-option.active {
+		background-color: var(--color-primary);
+		color: white;
+	}
+
+	.sort-select {
+		width: 100%;
+		padding: var(--space-sm) var(--space-md);
+		padding-right: 36px;
+		background-color: var(--color-bg-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-md);
+		color: var(--color-text-normal);
+		font-size: 0.9rem;
+		cursor: pointer;
+		appearance: none;
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+		background-repeat: no-repeat;
+		background-position: right 12px center;
+	}
+
+	.sort-select:focus {
+		outline: none;
+		border-color: var(--color-primary);
+		box-shadow: var(--focus-ring);
+	}
+
+	.results {
+		min-height: 400px;
+	}
+
+	.grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+		gap: var(--space-lg);
+	}
+
+	.empty-state {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		padding: var(--space-3xl);
+		text-align: center;
+		color: var(--color-text-muted);
+	}
+
+	.empty-state svg {
+		margin-bottom: var(--space-lg);
+		opacity: 0.5;
+	}
+
+	.empty-state h2 {
+		font-size: 1.25rem;
+		font-weight: 600;
+		color: var(--color-text-normal);
+		margin-bottom: var(--space-sm);
+	}
+
+	.empty-state p {
+		margin-bottom: var(--space-lg);
+	}
+
+	.empty-state .error {
+		color: var(--color-error);
+	}
+
+	.btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		padding: var(--space-sm) var(--space-lg);
+		border-radius: var(--radius-md);
+		font-weight: 500;
+		font-size: 0.9rem;
+		text-decoration: none;
+		border: none;
+		cursor: pointer;
+		transition: all var(--duration-fast) var(--ease-out);
+	}
+
+	.btn-primary {
+		background-color: var(--color-primary);
+		color: white;
+	}
+
+	.btn-primary:hover {
+		background-color: #5068d9;
+	}
+
+	.btn-secondary {
+		background-color: var(--color-bg-surface);
+		color: var(--color-text-normal);
+		border: 1px solid var(--color-border);
+	}
+
+	.btn-secondary:hover {
+		background-color: var(--color-bg-elevated);
+	}
+
+	.pagination {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-sm);
+		margin-top: var(--space-2xl);
+		padding-top: var(--space-xl);
+		border-top: 1px solid var(--color-border);
+	}
+
+	.pagination-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-xs);
+		padding: var(--space-sm) var(--space-md);
+		background-color: var(--color-bg-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-md);
+		color: var(--color-text-muted);
+		font-size: 0.875rem;
+		cursor: pointer;
+		transition: all var(--duration-fast) var(--ease-out);
+	}
+
+	.pagination-btn:hover:not(:disabled) {
+		background-color: var(--color-bg-elevated);
+		color: var(--color-text-normal);
+	}
+
+	.pagination-btn:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.pagination-pages {
+		display: flex;
+		align-items: center;
+		gap: var(--space-xs);
+	}
+
+	.pagination-page {
+		min-width: 36px;
+		height: 36px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		background: none;
+		border: none;
+		border-radius: var(--radius-md);
+		color: var(--color-text-muted);
+		font-size: 0.875rem;
+		cursor: pointer;
+		transition: all var(--duration-fast) var(--ease-out);
+	}
+
+	.pagination-page:hover {
+		background-color: var(--color-bg-surface);
+		color: var(--color-text-normal);
+	}
+
+	.pagination-page.active {
+		background-color: var(--color-primary);
+		color: white;
+	}
+
+	.pagination-ellipsis {
+		color: var(--color-text-faint);
+		padding: 0 var(--space-xs);
+	}
+
+	@media (max-width: 900px) {
+		.browse-layout {
+			grid-template-columns: 1fr;
+			padding: var(--space-lg);
+		}
+
+		.mobile-filter-toggle {
+			display: flex;
+			align-items: center;
+			gap: var(--space-sm);
+			padding: var(--space-sm) var(--space-md);
+			background-color: var(--color-bg-surface);
+			border: 1px solid var(--color-border);
+			border-radius: var(--radius-md);
+			color: var(--color-text-normal);
+			font-size: 0.9rem;
+			cursor: pointer;
+			margin-bottom: var(--space-lg);
+		}
+
+		.filter-sidebar {
+			display: none;
+			position: fixed;
+			inset: 0;
+			top: 57px;
+			z-index: 50;
+			background-color: var(--color-bg-base);
+			padding: var(--space-lg);
+			overflow-y: auto;
+		}
+
+		.filter-sidebar.open {
+			display: block;
+		}
+
+		.pagination-label {
+			display: none;
+		}
+	}
+
+	@media (max-width: 600px) {
+		.browse-header {
+			padding: var(--space-lg);
+		}
+
+		.grid {
+			grid-template-columns: 1fr;
+		}
 	}
 </style>

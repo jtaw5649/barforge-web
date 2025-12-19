@@ -2,6 +2,9 @@
 	import { API_BASE_URL } from '$lib';
 	import type { PageData } from './$types';
 	import { marked } from 'marked';
+	import Header from '$lib/components/Header.svelte';
+	import Footer from '$lib/components/Footer.svelte';
+	import { toast } from '$lib/stores/toast';
 
 	marked.setOptions({
 		gfm: true,
@@ -50,6 +53,7 @@
 		e.preventDefault();
 		if (!packageFile) {
 			error = 'Please select a package file';
+			toast.error('Please select a package file');
 			return;
 		}
 
@@ -107,8 +111,10 @@
 			}
 
 			success = true;
+			toast.success('Module published successfully!');
 		} catch (e) {
 			error = e instanceof Error ? e.message : 'Unknown error';
+			toast.error(error);
 		} finally {
 			loading = false;
 		}
@@ -120,23 +126,79 @@
 	}
 </script>
 
-<main>
-	<header>
+<Header session={data.session} />
+
+<main id="main-content">
+	<div class="page-header">
+		<nav class="breadcrumb" aria-label="Breadcrumb">
+			<a href="/">Home</a>
+			<span aria-hidden="true">/</span>
+			<span>Upload Module</span>
+		</nav>
 		<h1>Upload Module</h1>
 		<p>Share your Waybar module with the community</p>
-	</header>
+	</div>
 
 	<section class="content">
-		{#if success}
+		{#if !data.session?.user}
+			<div class="auth-required">
+				<div class="auth-icon">
+					<svg
+						viewBox="0 0 24 24"
+						width="48"
+						height="48"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="1.5"
+					>
+						<circle cx="12" cy="8" r="4" />
+						<path d="M6 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2" />
+					</svg>
+				</div>
+				<h2>Sign In Required</h2>
+				<p>You need to sign in to upload modules.</p>
+				<a href="/login" class="btn btn-primary">Sign In with GitHub</a>
+			</div>
+		{:else if success}
 			<div class="success-message">
+				<div class="success-icon">
+					<svg
+						viewBox="0 0 24 24"
+						width="48"
+						height="48"
+						fill="none"
+						stroke="currentColor"
+						stroke-width="2"
+					>
+						<circle cx="12" cy="12" r="10" />
+						<polyline points="9,12 12,15 16,10" />
+					</svg>
+				</div>
 				<h2>Module Published!</h2>
 				<p>Your module has been successfully published to the registry.</p>
-				<a href="/browse" class="btn btn-primary">Browse Modules</a>
+				<div class="success-actions">
+					<a href="/browse" class="btn btn-primary">Browse Modules</a>
+					<a href="/dashboard" class="btn btn-secondary">Go to Dashboard</a>
+				</div>
 			</div>
 		{:else}
 			<form onsubmit={handleSubmit}>
 				{#if error}
-					<div class="error">{error}</div>
+					<div class="error-banner">
+						<svg
+							viewBox="0 0 24 24"
+							width="20"
+							height="20"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<circle cx="12" cy="12" r="10" />
+							<line x1="12" y1="8" x2="12" y2="12" />
+							<line x1="12" y1="16" x2="12.01" y2="16" />
+						</svg>
+						{error}
+					</div>
 				{/if}
 
 				<div class="form-group">
@@ -192,8 +254,8 @@ Supports **Markdown** formatting:
 					<div class="form-group">
 						<label for="category">Category</label>
 						<select id="category" bind:value={category}>
-							{#each categories as cat}
-								<option value={cat}>{cat}</option>
+							{#each categories as cat (cat)}
+								<option value={cat}>{cat.charAt(0).toUpperCase() + cat.slice(1)}</option>
 							{/each}
 						</select>
 					</div>
@@ -224,13 +286,30 @@ Supports **Markdown** formatting:
 
 				<div class="form-group">
 					<label for="package">Package File (.tar.gz)</label>
-					<input
-						type="file"
-						id="package"
-						accept=".tar.gz,.tgz"
-						onchange={handleFileChange}
-						required
-					/>
+					<div class="file-input-wrapper">
+						<input
+							type="file"
+							id="package"
+							accept=".tar.gz,.tgz"
+							onchange={handleFileChange}
+							required
+						/>
+						<div class="file-input-display">
+							<svg
+								viewBox="0 0 24 24"
+								width="24"
+								height="24"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="1.5"
+							>
+								<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+								<polyline points="17 8 12 3 7 8" />
+								<line x1="12" y1="3" x2="12" y2="15" />
+							</svg>
+							<span>{packageFile ? packageFile.name : 'Choose a file or drag it here'}</span>
+						</div>
+					</div>
 					<small>Max 10MB. Must be a valid tar.gz archive.</small>
 				</div>
 
@@ -244,44 +323,130 @@ Supports **Markdown** formatting:
 					></textarea>
 				</div>
 
-				<button type="submit" class="btn btn-primary" disabled={loading}>
-					{loading ? 'Publishing...' : 'Publish Module'}
+				<button type="submit" class="btn btn-primary btn-submit" disabled={loading}>
+					{#if loading}
+						<span class="spinner"></span>
+						Publishing...
+					{:else}
+						Publish Module
+					{/if}
 				</button>
 			</form>
 		{/if}
 	</section>
 </main>
 
+<Footer />
+
 <style>
 	main {
-		min-height: 100vh;
+		flex: 1;
+		display: flex;
+		flex-direction: column;
 	}
 
-	header {
+	.page-header {
 		padding: var(--space-xl) var(--space-2xl);
 		border-bottom: 1px solid var(--color-border);
+		background-color: var(--color-bg-surface);
 	}
 
-	header h1 {
+	.breadcrumb {
+		display: flex;
+		gap: var(--space-sm);
+		margin-bottom: var(--space-md);
+		font-size: 0.875rem;
+		color: var(--color-text-muted);
+	}
+
+	.breadcrumb a {
+		color: var(--color-primary);
+		text-decoration: none;
+	}
+
+	.breadcrumb a:hover {
+		text-decoration: underline;
+	}
+
+	.page-header h1 {
 		font-size: 1.5rem;
 		font-weight: 600;
 	}
 
-	header p {
+	.page-header p {
 		color: var(--color-text-muted);
 		font-size: 0.875rem;
 	}
 
 	.content {
 		padding: var(--space-2xl);
-		max-width: 600px;
+		max-width: 640px;
 		margin: 0 auto;
+		width: 100%;
+	}
+
+	.auth-required,
+	.success-message {
+		text-align: center;
+		padding: var(--space-3xl);
+		background-color: var(--color-bg-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+	}
+
+	.auth-icon,
+	.success-icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 80px;
+		height: 80px;
+		background-color: var(--color-bg-elevated);
+		border-radius: 50%;
+		margin-bottom: var(--space-lg);
+	}
+
+	.auth-icon svg {
+		color: var(--color-text-muted);
+	}
+
+	.success-icon {
+		background-color: rgba(16, 185, 129, 0.1);
+	}
+
+	.success-icon svg {
+		color: #10b981;
+	}
+
+	.auth-required h2,
+	.success-message h2 {
+		margin-bottom: var(--space-md);
+	}
+
+	.success-message h2 {
+		color: #10b981;
+	}
+
+	.auth-required p,
+	.success-message p {
+		color: var(--color-text-muted);
+		margin-bottom: var(--space-xl);
+	}
+
+	.success-actions {
+		display: flex;
+		gap: var(--space-md);
+		justify-content: center;
 	}
 
 	form {
 		display: flex;
 		flex-direction: column;
 		gap: var(--space-lg);
+		background-color: var(--color-bg-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		padding: var(--space-xl);
 	}
 
 	.form-group {
@@ -316,6 +481,7 @@ Supports **Markdown** formatting:
 		border-radius: var(--radius-sm);
 		font-size: 0.75rem;
 		cursor: pointer;
+		transition: all var(--duration-fast) var(--ease-out);
 	}
 
 	.preview-toggle:hover {
@@ -327,7 +493,7 @@ Supports **Markdown** formatting:
 		padding: var(--space-md);
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-md);
-		background-color: var(--color-bg-surface);
+		background-color: var(--color-bg-base);
 		min-height: 200px;
 		line-height: 1.6;
 	}
@@ -406,9 +572,10 @@ Supports **Markdown** formatting:
 		padding: var(--space-md);
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-md);
-		background-color: var(--color-bg-surface);
+		background-color: var(--color-bg-base);
 		color: var(--color-text-normal);
 		font-size: 0.875rem;
+		transition: border-color var(--duration-fast) var(--ease-out);
 	}
 
 	input:focus,
@@ -416,6 +583,35 @@ Supports **Markdown** formatting:
 	select:focus {
 		outline: none;
 		border-color: var(--color-primary);
+		box-shadow: 0 0 0 3px rgba(97, 125, 250, 0.15);
+	}
+
+	.file-input-wrapper {
+		position: relative;
+	}
+
+	.file-input-wrapper input[type='file'] {
+		position: absolute;
+		inset: 0;
+		opacity: 0;
+		cursor: pointer;
+	}
+
+	.file-input-display {
+		display: flex;
+		align-items: center;
+		gap: var(--space-md);
+		padding: var(--space-lg);
+		border: 2px dashed var(--color-border);
+		border-radius: var(--radius-md);
+		background-color: var(--color-bg-base);
+		color: var(--color-text-muted);
+		transition: all var(--duration-fast) var(--ease-out);
+	}
+
+	.file-input-wrapper:hover .file-input-display {
+		border-color: var(--color-primary);
+		background-color: rgba(97, 125, 250, 0.05);
 	}
 
 	small {
@@ -423,23 +619,31 @@ Supports **Markdown** formatting:
 		color: var(--color-text-faint);
 	}
 
-	.error {
+	.error-banner {
+		display: flex;
+		align-items: center;
+		gap: var(--space-md);
 		padding: var(--space-md);
-		background-color: rgba(var(--color-error-rgb, 239, 68, 68), 0.1);
-		border: 1px solid var(--color-error);
+		background-color: rgba(239, 68, 68, 0.1);
+		border: 1px solid rgba(239, 68, 68, 0.2);
 		border-radius: var(--radius-md);
 		color: var(--color-error);
 		font-size: 0.875rem;
 	}
 
 	.btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-sm);
 		padding: var(--space-md) var(--space-xl);
 		border-radius: var(--radius-md);
 		font-weight: 500;
 		font-size: 1rem;
 		border: none;
 		cursor: pointer;
-		transition: all 0.15s ease;
+		text-decoration: none;
+		transition: all var(--duration-fast) var(--ease-out);
 	}
 
 	.btn:disabled {
@@ -453,21 +657,53 @@ Supports **Markdown** formatting:
 	}
 
 	.btn-primary:hover:not(:disabled) {
-		background-color: #4f6ce8;
+		background-color: #5068d9;
 	}
 
-	.success-message {
-		text-align: center;
-		padding: var(--space-2xl);
+	.btn-secondary {
+		background-color: var(--color-bg-surface);
+		color: var(--color-text-normal);
+		border: 1px solid var(--color-border);
 	}
 
-	.success-message h2 {
-		color: var(--color-success, #22c55e);
-		margin-bottom: var(--space-md);
+	.btn-secondary:hover {
+		background-color: var(--color-bg-elevated);
 	}
 
-	.success-message p {
-		color: var(--color-text-muted);
-		margin-bottom: var(--space-xl);
+	.btn-submit {
+		margin-top: var(--space-md);
+	}
+
+	.spinner {
+		width: 16px;
+		height: 16px;
+		border: 2px solid rgba(255, 255, 255, 0.3);
+		border-top-color: white;
+		border-radius: 50%;
+		animation: spin 0.8s linear infinite;
+	}
+
+	@keyframes spin {
+		to {
+			transform: rotate(360deg);
+		}
+	}
+
+	@media (max-width: 768px) {
+		.page-header {
+			padding: var(--space-lg);
+		}
+
+		.content {
+			padding: var(--space-lg);
+		}
+
+		.form-row {
+			grid-template-columns: 1fr;
+		}
+
+		.success-actions {
+			flex-direction: column;
+		}
 	}
 </style>

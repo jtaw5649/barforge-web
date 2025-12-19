@@ -1,0 +1,258 @@
+<script lang="ts">
+	import { fly } from 'svelte/transition';
+	import Badge from './Badge.svelte';
+	import Tag from './Tag.svelte';
+
+	interface Props {
+		uuid: string;
+		name: string;
+		author: string;
+		description: string;
+		category: string;
+		downloads: number;
+		version?: string;
+		verified?: boolean;
+		icon?: string;
+		delay?: number;
+	}
+
+	let {
+		uuid,
+		name,
+		author,
+		description,
+		category,
+		downloads,
+		version,
+		verified = false,
+		icon,
+		delay = 0
+	}: Props = $props();
+
+	function formatDownloads(n: number): string {
+		if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
+		if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
+		return n.toString();
+	}
+
+	const categoryVariants: Record<
+		string,
+		'purple' | 'blue' | 'green' | 'amber' | 'pink' | 'teal' | 'gray'
+	> = {
+		system: 'purple',
+		hardware: 'green',
+		network: 'blue',
+		audio: 'pink',
+		media: 'amber',
+		productivity: 'teal',
+		weather: 'blue',
+		utility: 'gray',
+		notification: 'amber',
+		workspace: 'purple',
+		custom: 'pink',
+		theme: 'teal',
+		integration: 'green'
+	};
+
+	const categoryColors: Record<string, string> = {
+		purple: '#617dfa',
+		blue: '#06b6d4',
+		green: '#10b981',
+		amber: '#f59e0b',
+		pink: '#ec4899',
+		teal: '#14b8a6',
+		gray: '#6b7280'
+	};
+
+	const categoryVariant = $derived(categoryVariants[category.toLowerCase()] || 'gray');
+	const categoryColor = $derived(categoryColors[categoryVariant]);
+</script>
+
+<a
+	href="/modules/{encodeURIComponent(uuid)}"
+	class="card"
+	style="--card-color: {categoryColor}"
+	transition:fly={{ y: 20, duration: 300, delay }}
+>
+	<div class="card-content">
+		{#if icon}
+			<div class="card-icon">
+				<img src={icon} alt="" />
+			</div>
+		{:else}
+			<div class="card-icon placeholder">
+				{name.charAt(0).toUpperCase()}
+			</div>
+		{/if}
+
+		<div class="card-main">
+			<div class="card-header">
+				<h3>{name}</h3>
+				{#if version}
+					<Badge size="sm" variant="version">v{version}</Badge>
+				{/if}
+			</div>
+			<p class="author">by {author}</p>
+			<p class="description">{description}</p>
+		</div>
+	</div>
+
+	<div class="card-footer">
+		<div class="card-tags">
+			<Tag variant={categoryVariant}>
+				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+					<rect x="3" y="3" width="18" height="18" rx="2" />
+					<line x1="3" y1="9" x2="21" y2="9" />
+					<line x1="9" y1="21" x2="9" y2="9" />
+				</svg>
+				{category}
+			</Tag>
+			{#if verified}
+				<Tag variant="green">
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+						<polyline points="22 4 12 14.01 9 11.01" />
+					</svg>
+					Verified
+				</Tag>
+			{/if}
+		</div>
+		<div class="card-stats">
+			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+				<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+				<polyline points="7 10 12 15 17 10" />
+				<line x1="12" y1="15" x2="12" y2="3" />
+			</svg>
+			{formatDownloads(downloads)}
+		</div>
+	</div>
+</a>
+
+<style>
+	.card {
+		display: block;
+		position: relative;
+		padding: var(--space-lg);
+		background: var(--color-bg-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		text-decoration: none;
+		color: inherit;
+		transition:
+			transform var(--duration-fast) var(--ease-out),
+			border-color var(--duration-fast) var(--ease-out),
+			box-shadow var(--duration-fast) var(--ease-out);
+	}
+
+	.card:hover {
+		transform: translateY(-2px);
+		border-color: var(--card-color);
+		box-shadow:
+			var(--shadow-md),
+			0 0 20px color-mix(in srgb, var(--card-color) 30%, transparent);
+		text-decoration: none;
+	}
+
+	.card:focus-visible {
+		outline: none;
+		box-shadow: var(--focus-ring);
+	}
+
+	.card-content {
+		display: flex;
+		gap: var(--space-md);
+	}
+
+	.card-icon {
+		width: 48px;
+		height: 48px;
+		border-radius: var(--radius-md);
+		flex-shrink: 0;
+		overflow: hidden;
+	}
+
+	.card-icon.placeholder {
+		background: linear-gradient(135deg, var(--color-primary), #8b5cf6);
+		color: white;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 1.25rem;
+		font-weight: 600;
+	}
+
+	.card-icon img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.card-main {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.card-header {
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
+		margin-bottom: var(--space-xs);
+	}
+
+	.card-header h3 {
+		font-size: 1rem;
+		font-weight: 600;
+	}
+
+	.author {
+		font-size: 0.8rem;
+		color: var(--color-text-faint);
+		margin-bottom: var(--space-sm);
+	}
+
+	.description {
+		font-size: 0.875rem;
+		color: var(--color-text-muted);
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+		line-height: 1.5;
+	}
+
+	.card-footer {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: var(--space-md);
+		margin-top: var(--space-lg);
+		padding-top: var(--space-md);
+		border-top: 1px solid var(--color-border);
+	}
+
+	.card-tags {
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
+		flex-wrap: wrap;
+	}
+
+	.card-stats {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 0.75rem;
+		font-weight: 500;
+		color: #fbbf24;
+		background: linear-gradient(135deg, rgba(251, 146, 60, 0.15), rgba(245, 158, 11, 0.15));
+		padding: 4px 10px;
+		border-radius: 9999px;
+		flex-shrink: 0;
+	}
+
+	.card-stats svg {
+		width: 14px;
+		height: 14px;
+		color: #fb923c;
+	}
+</style>

@@ -7,3 +7,7 @@ yarn.lock
 .svelte-kit
 build
 dist
+
+# Claude artifacts
+.claude-flow/
+.claude/

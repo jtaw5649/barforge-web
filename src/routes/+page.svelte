@@ -1,7 +1,12 @@
 <script lang="ts">
-	import { signOut } from '@auth/sveltekit/client';
 	import { API_BASE_URL } from '$lib';
 	import type { PageData } from './$types';
+	import Header from '$lib/components/Header.svelte';
+	import Footer from '$lib/components/Footer.svelte';
+	import ModuleCard from '$lib/components/ModuleCard.svelte';
+	import ModuleCardSkeleton from '$lib/components/ModuleCardSkeleton.svelte';
+	import SearchInput from '$lib/components/SearchInput.svelte';
+	import Badge from '$lib/components/Badge.svelte';
 
 	let { data }: { data: PageData } = $props();
 
@@ -21,6 +26,15 @@
 		popular: Module[];
 		recent: Module[];
 	}
+
+	const categories = [
+		{ name: 'System', slug: 'system', icon: '⚙️', color: '#617dfa' },
+		{ name: 'Hardware', slug: 'hardware', icon: '🖥️', color: '#10b981' },
+		{ name: 'Network', slug: 'network', icon: '🌐', color: '#f59e0b' },
+		{ name: 'Media', slug: 'media', icon: '🎵', color: '#ec4899' },
+		{ name: 'Workspace', slug: 'workspace', icon: '🪟', color: '#8b5cf6' },
+		{ name: 'Clock', slug: 'clock', icon: '🕐', color: '#06b6d4' }
+	];
 
 	let featuredData: FeaturedData | null = $state(null);
 	let loading = $state(true);
@@ -42,42 +56,26 @@
 			loading = false;
 		}
 	}
-
-	function formatDownloads(n: number): string {
-		if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
-		return n.toString();
-	}
 </script>
 
-<main>
-	<header>
-		<a href="/" class="logo">Waybar Modules</a>
-		<nav>
-			<a href="/browse">Browse</a>
-		</nav>
-		<div class="header-right">
-			{#if data.session?.user}
-				<a href="/upload" class="btn btn-small">Upload</a>
-				<a href="/dashboard" class="user-link">
-					<img src={data.session.user.image} alt="" class="avatar" />
-					<span class="user-name">{data.session.user.name}</span>
-				</a>
-				<button class="btn btn-small" onclick={() => signOut()}>Sign Out</button>
-			{:else}
-				<a href="/login" class="btn btn-small btn-primary">Sign In</a>
-			{/if}
-		</div>
-	</header>
+<Header session={data.session} />
 
+<main id="main-content">
 	<section class="hero">
 		<div class="hero-content">
-			<h1>Discover modules for your Waybar</h1>
+			<Badge variant="info" size="sm">Open Source</Badge>
+			<h1>
+				Discover <span class="gradient-text">modules</span> for your Waybar
+			</h1>
 			<p>
 				Find community-created modules to enhance your Waybar experience. Install with a single
 				click using Waybar Manager.
 			</p>
+			<div class="hero-search">
+				<SearchInput size="lg" />
+			</div>
 			<div class="hero-actions">
-				<a href="/browse" class="btn btn-primary btn-large">Browse Modules</a>
+				<a href="/browse" class="btn btn-primary btn-large">Browse All Modules</a>
 				{#if data.session?.user}
 					<a href="/upload" class="btn btn-secondary btn-large">Upload Module</a>
 				{:else}
@@ -87,37 +85,63 @@
 		</div>
 	</section>
 
+	<section class="categories-section">
+		<div class="section-header">
+			<h2>Browse by Category</h2>
+		</div>
+		<div class="categories-grid">
+			{#each categories as cat (cat.slug)}
+				<a
+					href="/browse?category={cat.slug}"
+					class="category-card"
+					style="--cat-color: {cat.color}"
+				>
+					<span class="category-icon">{cat.icon}</span>
+					<span class="category-name">{cat.name}</span>
+				</a>
+			{/each}
+		</div>
+	</section>
+
 	{#if loading}
 		<section class="modules-section">
-			<div class="loading">Loading modules...</div>
+			<div class="section-header">
+				<h2>Featured Modules</h2>
+			</div>
+			<div class="grid featured-grid">
+				{#each Array(3) as _, i (i)}
+					<ModuleCardSkeleton />
+				{/each}
+			</div>
 		</section>
 	{:else if error}
 		<section class="modules-section">
-			<div class="error">{error}</div>
+			<div class="error-state">
+				<p>{error}</p>
+				<button class="btn btn-primary" onclick={() => fetchFeatured()}>Try Again</button>
+			</div>
 		</section>
 	{:else if featuredData}
 		{#if featuredData.featured.length > 0}
 			<section class="modules-section">
 				<div class="section-header">
-					<h2>Featured Modules</h2>
-					<p>Hand-picked by our team</p>
+					<div>
+						<h2>Featured Modules</h2>
+						<p>Hand-picked by our team</p>
+					</div>
 				</div>
 				<div class="grid featured-grid">
-					{#each featuredData.featured as module}
-						<a href="/modules/{encodeURIComponent(module.uuid)}" class="card featured-card">
-							<div class="card-header">
-								<h3>{module.name}</h3>
-								{#if module.verified_author}
-									<span class="verified" title="Verified Author">&#10003;</span>
-								{/if}
-							</div>
-							<p class="author">by {module.author}</p>
-							<p class="description">{module.description}</p>
-							<div class="meta">
-								<span class="category">{module.category}</span>
-								<span class="downloads">{formatDownloads(module.downloads)} downloads</span>
-							</div>
-						</a>
+					{#each featuredData.featured as module, i (module.uuid)}
+						<ModuleCard
+							uuid={module.uuid}
+							name={module.name}
+							author={module.author}
+							description={module.description}
+							category={module.category}
+							downloads={module.downloads}
+							verified={module.verified_author}
+							delay={i * 50}
+						/>
 					{/each}
 				</div>
 			</section>
@@ -127,24 +151,20 @@
 			<section class="modules-section">
 				<div class="section-header">
 					<h2>Popular Modules</h2>
-					<a href="/browse?sort=popular" class="see-all">See all</a>
+					<a href="/browse?sort=popular" class="see-all">See all →</a>
 				</div>
 				<div class="grid">
-					{#each featuredData.popular as module}
-						<a href="/modules/{encodeURIComponent(module.uuid)}" class="card">
-							<div class="card-header">
-								<h3>{module.name}</h3>
-								{#if module.verified_author}
-									<span class="verified" title="Verified Author">&#10003;</span>
-								{/if}
-							</div>
-							<p class="author">by {module.author}</p>
-							<p class="description">{module.description}</p>
-							<div class="meta">
-								<span class="category">{module.category}</span>
-								<span class="downloads">{formatDownloads(module.downloads)} downloads</span>
-							</div>
-						</a>
+					{#each featuredData.popular as module, i (module.uuid)}
+						<ModuleCard
+							uuid={module.uuid}
+							name={module.name}
+							author={module.author}
+							description={module.description}
+							category={module.category}
+							downloads={module.downloads}
+							verified={module.verified_author}
+							delay={i * 50}
+						/>
 					{/each}
 				</div>
 			</section>
@@ -154,24 +174,20 @@
 			<section class="modules-section">
 				<div class="section-header">
 					<h2>Recently Added</h2>
-					<a href="/browse?sort=recent" class="see-all">See all</a>
+					<a href="/browse?sort=recent" class="see-all">See all →</a>
 				</div>
 				<div class="grid">
-					{#each featuredData.recent as module}
-						<a href="/modules/{encodeURIComponent(module.uuid)}" class="card">
-							<div class="card-header">
-								<h3>{module.name}</h3>
-								{#if module.verified_author}
-									<span class="verified" title="Verified Author">&#10003;</span>
-								{/if}
-							</div>
-							<p class="author">by {module.author}</p>
-							<p class="description">{module.description}</p>
-							<div class="meta">
-								<span class="category">{module.category}</span>
-								<span class="downloads">{formatDownloads(module.downloads)} downloads</span>
-							</div>
-						</a>
+					{#each featuredData.recent as module, i (module.uuid)}
+						<ModuleCard
+							uuid={module.uuid}
+							name={module.name}
+							author={module.author}
+							description={module.description}
+							category={module.category}
+							downloads={module.downloads}
+							verified={module.verified_author}
+							delay={i * 50}
+						/>
 					{/each}
 				</div>
 			</section>
@@ -179,92 +195,13 @@
 	{/if}
 </main>
 
+<Footer />
+
 <style>
 	main {
 		min-height: 100vh;
-	}
-
-	header {
-		padding: var(--space-md) var(--space-2xl);
-		border-bottom: 1px solid var(--color-border);
 		display: flex;
-		justify-content: space-between;
-		align-items: center;
-		position: sticky;
-		top: 0;
-		background-color: var(--color-bg-base);
-		z-index: 100;
-	}
-
-	.logo {
-		font-size: 1.25rem;
-		font-weight: 600;
-		color: var(--color-text-normal);
-		text-decoration: none;
-	}
-
-	nav {
-		display: flex;
-		gap: var(--space-lg);
-	}
-
-	nav a {
-		color: var(--color-text-muted);
-		text-decoration: none;
-		font-size: 0.875rem;
-	}
-
-	nav a:hover {
-		color: var(--color-text-normal);
-	}
-
-	.header-right {
-		display: flex;
-		align-items: center;
-		gap: var(--space-md);
-	}
-
-	.user-link {
-		display: flex;
-		align-items: center;
-		gap: var(--space-sm);
-		text-decoration: none;
-		color: inherit;
-	}
-
-	.user-link:hover .user-name {
-		color: var(--color-text-normal);
-	}
-
-	.avatar {
-		width: 28px;
-		height: 28px;
-		border-radius: 50%;
-	}
-
-	.user-name {
-		color: var(--color-text-muted);
-		font-size: 0.875rem;
-	}
-
-	.btn-small {
-		padding: var(--space-sm) var(--space-md);
-		font-size: 0.875rem;
-		background-color: var(--color-bg-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-sm);
-		color: var(--color-text-normal);
-	}
-
-	.btn-small:hover {
-		background-color: var(--color-bg-elevated);
-		text-decoration: none;
-	}
-
-	.btn-small.btn-primary {
-		background-color: var(--color-primary);
-		color: white;
-		border-color: var(--color-primary);
+		flex-direction: column;
 	}
 
 	.hero {
@@ -280,10 +217,17 @@
 	}
 
 	.hero-content h1 {
-		font-size: 2.75rem;
+		font-size: 3rem;
 		font-weight: 700;
-		margin-bottom: var(--space-lg);
-		line-height: 1.2;
+		margin: var(--space-lg) 0;
+		line-height: 1.15;
+	}
+
+	.gradient-text {
+		background: linear-gradient(135deg, var(--color-primary) 0%, #8b5cf6 50%, #ec4899 100%);
+		-webkit-background-clip: text;
+		-webkit-text-fill-color: transparent;
+		background-clip: text;
 	}
 
 	.hero-content p {
@@ -293,19 +237,31 @@
 		line-height: 1.6;
 	}
 
+	.hero-search {
+		display: flex;
+		justify-content: center;
+		margin-bottom: var(--space-xl);
+	}
+
 	.hero-actions {
 		display: flex;
+		flex-wrap: wrap;
 		gap: var(--space-md);
 		justify-content: center;
 	}
 
 	.btn {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
 		padding: var(--space-md) var(--space-xl);
 		border-radius: var(--radius-md);
 		font-weight: 500;
 		font-size: 1rem;
-		transition: all 0.15s ease;
+		transition: all var(--duration-fast) var(--ease-out);
 		text-decoration: none;
+		border: none;
+		cursor: pointer;
 	}
 
 	.btn-large {
@@ -319,8 +275,7 @@
 	}
 
 	.btn-primary:hover {
-		background-color: #4f6ce8;
-		text-decoration: none;
+		background-color: #5068d9;
 	}
 
 	.btn-secondary {
@@ -331,13 +286,55 @@
 
 	.btn-secondary:hover {
 		background-color: var(--color-bg-elevated);
+	}
+
+	.categories-section {
+		padding: var(--space-2xl);
+		max-width: 1400px;
+		margin: 0 auto;
+		width: 100%;
+	}
+
+	.categories-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+		gap: var(--space-md);
+	}
+
+	.category-card {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: var(--space-sm);
+		padding: var(--space-lg);
+		background-color: var(--color-bg-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
 		text-decoration: none;
+		transition: all var(--duration-fast) var(--ease-out);
+	}
+
+	.category-card:hover {
+		border-color: var(--cat-color);
+		transform: translateY(-2px);
+		box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+	}
+
+	.category-icon {
+		font-size: 1.75rem;
+	}
+
+	.category-name {
+		font-size: 0.875rem;
+		font-weight: 500;
+		color: var(--color-text-normal);
 	}
 
 	.modules-section {
 		padding: var(--space-2xl);
 		max-width: 1400px;
 		margin: 0 auto;
+		width: 100%;
 	}
 
 	.section-header {
@@ -362,20 +359,21 @@
 		color: var(--color-primary);
 		font-size: 0.875rem;
 		text-decoration: none;
+		font-weight: 500;
 	}
 
 	.see-all:hover {
 		text-decoration: underline;
 	}
 
-	.loading,
-	.error {
+	.error-state {
 		text-align: center;
 		padding: var(--space-2xl);
 		color: var(--color-text-muted);
 	}
 
-	.error {
+	.error-state p {
+		margin-bottom: var(--space-lg);
 		color: var(--color-error);
 	}
 
@@ -389,85 +387,7 @@
 		grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
 	}
 
-	.card {
-		display: block;
-		padding: var(--space-lg);
-		background-color: var(--color-bg-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		color: inherit;
-		text-decoration: none;
-		transition: all 0.15s ease;
-	}
-
-	.card:hover {
-		border-color: var(--color-primary);
-		background-color: var(--color-bg-elevated);
-		text-decoration: none;
-	}
-
-	.featured-card {
-		background: linear-gradient(135deg, var(--color-bg-surface) 0%, var(--color-bg-elevated) 100%);
-		border-color: var(--color-primary);
-		border-width: 2px;
-	}
-
-	.card-header {
-		display: flex;
-		align-items: center;
-		gap: var(--space-sm);
-		margin-bottom: var(--space-xs);
-	}
-
-	.card h3 {
-		font-size: 1.125rem;
-		font-weight: 600;
-	}
-
-	.verified {
-		color: var(--color-primary);
-		font-size: 0.875rem;
-	}
-
-	.card .author {
-		font-size: 0.75rem;
-		color: var(--color-text-faint);
-		margin-bottom: var(--space-md);
-	}
-
-	.card .description {
-		font-size: 0.875rem;
-		color: var(--color-text-muted);
-		margin-bottom: var(--space-md);
-		display: -webkit-box;
-		-webkit-line-clamp: 2;
-		-webkit-box-orient: vertical;
-		overflow: hidden;
-		line-height: 1.5;
-	}
-
-	.card .meta {
-		display: flex;
-		gap: var(--space-md);
-		font-size: 0.75rem;
-		color: var(--color-text-faint);
-	}
-
-	.category {
-		background-color: var(--color-bg-base);
-		padding: var(--space-xs) var(--space-sm);
-		border-radius: var(--radius-sm);
-	}
-
 	@media (max-width: 768px) {
-		header {
-			padding: var(--space-md) var(--space-lg);
-		}
-
-		nav {
-			display: none;
-		}
-
 		.hero {
 			padding: var(--space-2xl) var(--space-lg);
 		}
@@ -484,8 +404,13 @@
 			flex-direction: column;
 		}
 
+		.categories-section,
 		.modules-section {
 			padding: var(--space-lg);
+		}
+
+		.categories-grid {
+			grid-template-columns: repeat(3, 1fr);
 		}
 
 		.grid {
