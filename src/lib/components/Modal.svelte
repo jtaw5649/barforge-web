@@ -106,15 +106,29 @@
 		align-items: center;
 		justify-content: center;
 		z-index: 1000;
+		padding: var(--space-lg);
 	}
 
 	.modal {
-		background: var(--color-bg-elevated);
+		/* Reset dialog defaults */
+		position: static;
+		margin: 0;
+		padding: 0;
+		inset: unset;
+		max-width: none;
+		max-height: 85vh;
+
+		/* Custom styles */
+		background: var(--color-bg-surface);
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-lg);
 		box-shadow: var(--shadow-lg);
-		max-height: 85vh;
 		overflow: auto;
+		color: var(--color-text-normal);
+	}
+
+	.modal::backdrop {
+		display: none;
 	}
 
 	.modal-sm {

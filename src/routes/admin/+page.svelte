@@ -148,13 +148,6 @@
 <Header session={data.session} />
 
 <main id="main-content">
-	<div class="page-header">
-		<div class="page-header-content">
-			<h1>Admin Dashboard</h1>
-			<p>Manage module submissions and platform statistics</p>
-		</div>
-	</div>
-
 	{#if !data.session?.user}
 		<section class="content">
 			<div class="access-denied">
@@ -220,6 +213,12 @@
 			</div>
 		</section>
 	{:else}
+		<div class="page-header">
+			<div class="page-header-content">
+				<h1>Admin Dashboard</h1>
+				<p>Manage module submissions and platform statistics</p>
+			</div>
+		</div>
 		<section class="content">
 			{#if stats}
 				<div class="stats-grid">

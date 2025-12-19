@@ -24,7 +24,12 @@ export const CATEGORIES: readonly Category[] = [
 	{ name: 'Window', slug: 'window', icon: '/icons/category-window.svg', color: '#a855f7' },
 	{ name: 'Tray', slug: 'tray', icon: '/icons/category-tray.svg', color: '#6366f1' },
 	{ name: 'Weather', slug: 'weather', icon: '/icons/category-weather.svg', color: '#0ea5e9' },
-	{ name: 'Productivity', slug: 'productivity', icon: '/icons/category-productivity.svg', color: '#14b8a6' },
+	{
+		name: 'Productivity',
+		slug: 'productivity',
+		icon: '/icons/category-productivity.svg',
+		color: '#14b8a6'
+	},
 	{ name: 'Media', slug: 'media', icon: '/icons/category-media.svg', color: '#ec4899' },
 	{ name: 'Custom', slug: 'custom', icon: '/icons/category-custom.svg', color: '#64748b' }
 ] as const;

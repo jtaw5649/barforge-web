@@ -41,67 +41,63 @@
 	const categoryColor = $derived(getCategoryColor(category));
 </script>
 
-<div class="card-wrapper" transition:fly={{ y: 20, duration: 300, delay }}>
+<div class="card-wrapper" in:fly={{ y: 20, duration: 300, delay }}>
 	<div class="favorite-action">
 		<StarFavorite {uuid} size="sm" />
 	</div>
-	<a
-		href="/modules/{encodeURIComponent(uuid)}"
-		class="card"
-		style="--card-color: {categoryColor}"
-	>
+	<a href="/modules/{encodeURIComponent(uuid)}" class="card" style="--card-color: {categoryColor}">
 		<div class="card-content">
-		{#if icon}
-			<div class="card-icon">
-				<img src={icon} alt="" />
-			</div>
-		{:else}
-			<div class="card-icon placeholder">
-				{name.charAt(0).toUpperCase()}
-			</div>
-		{/if}
+			{#if icon}
+				<div class="card-icon">
+					<img src={icon} alt="" />
+				</div>
+			{:else}
+				<div class="card-icon placeholder">
+					{name.charAt(0).toUpperCase()}
+				</div>
+			{/if}
 
-		<div class="card-main">
-			<div class="card-header">
-				<h3>{name}</h3>
-				{#if version}
-					<Badge size="sm" variant="version">v{version}</Badge>
+			<div class="card-main">
+				<div class="card-header">
+					<h3>{name}</h3>
+					{#if version}
+						<Badge size="sm" variant="version">v{version}</Badge>
+					{/if}
+				</div>
+				<p class="author">by {author}</p>
+				<p class="description">{description}</p>
+			</div>
+		</div>
+
+		<div class="card-footer">
+			<div class="card-tags">
+				<Tag variant={categoryVariant}>
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+						<rect x="3" y="3" width="18" height="18" rx="2" />
+						<line x1="3" y1="9" x2="21" y2="9" />
+						<line x1="9" y1="21" x2="9" y2="9" />
+					</svg>
+					{category}
+				</Tag>
+				{#if verified}
+					<Tag variant="green">
+						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+							<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+							<polyline points="22 4 12 14.01 9 11.01" />
+						</svg>
+						Verified
+					</Tag>
 				{/if}
 			</div>
-			<p class="author">by {author}</p>
-			<p class="description">{description}</p>
-		</div>
-	</div>
-
-	<div class="card-footer">
-		<div class="card-tags">
-			<Tag variant={categoryVariant}>
+			<div class="card-stats">
 				<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-					<rect x="3" y="3" width="18" height="18" rx="2" />
-					<line x1="3" y1="9" x2="21" y2="9" />
-					<line x1="9" y1="21" x2="9" y2="9" />
+					<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+					<polyline points="7 10 12 15 17 10" />
+					<line x1="12" y1="15" x2="12" y2="3" />
 				</svg>
-				{category}
-			</Tag>
-			{#if verified}
-				<Tag variant="green">
-					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-						<path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-						<polyline points="22 4 12 14.01 9 11.01" />
-					</svg>
-					Verified
-				</Tag>
-			{/if}
+				{formatDownloads(downloads)}
+			</div>
 		</div>
-		<div class="card-stats">
-			<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-				<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-				<polyline points="7 10 12 15 17 10" />
-				<line x1="12" y1="15" x2="12" y2="3" />
-			</svg>
-			{formatDownloads(downloads)}
-		</div>
-	</div>
 	</a>
 </div>
 

@@ -6,7 +6,13 @@
 	import Footer from '$lib/components/Footer.svelte';
 	import Badge from '$lib/components/Badge.svelte';
 	import Modal from '$lib/components/Modal.svelte';
+	import CharacterCounter from '$lib/components/CharacterCounter.svelte';
+	import ProfileCompleteness from '$lib/components/ProfileCompleteness.svelte';
+	import ProfilePreviewCard from '$lib/components/ProfilePreviewCard.svelte';
 	import { toast } from '$lib/stores/toast';
+	import { validateSocialUrl } from '$lib/utils/socialLinks';
+	import { getDisplayName, getProfileUsername } from '$lib/utils/displayName';
+	import { pinnedModules, MAX_PINNED_MODULES } from '$lib/stores/pinnedModules';
 
 	let { data }: { data: PageData } = $props();
 
@@ -15,16 +21,54 @@
 	let displayName = $state('');
 	let bio = $state('');
 	let websiteUrl = $state('');
+	let githubUrl = $state('');
+	let twitterUrl = $state('');
+	let sponsorUrl = $state('');
 	let saving = $state(false);
+	let saveStatus = $state('');
 
 	let profile = $derived(data.profile);
 	let modules = $derived(data.modules || []);
 	let collections = $derived(data.collections || []);
 
+	let profileData = $derived({
+		display_name: displayName || null,
+		bio: bio || null,
+		website_url: websiteUrl || null,
+		avatar_url: data.session?.user?.image || null
+	});
+
+	let githubValid = $derived(validateSocialUrl('github', githubUrl));
+	let twitterValid = $derived(validateSocialUrl('twitter', twitterUrl));
+
+	let previewDisplayName = $derived(
+		getDisplayName(
+			displayName,
+			profile?.display_name,
+			data.session?.user?.name,
+			profile?.username || data.session?.user?.login || ''
+		)
+	);
+	let effectiveUsername = $derived(getProfileUsername(profile?.username, data.session?.user?.login));
+
+	let currentPinnedModules = $state<string[]>([]);
+
+	$effect(() => {
+		const unsubscribe = pinnedModules.subscribe((value) => {
+			currentPinnedModules = value;
+		});
+		return unsubscribe;
+	});
+
 	let showCreateModal = $state(false);
 	let showEditModal = $state(false);
 	let showDeleteModal = $state(false);
-	let selectedCollection: { id: number; name: string; description: string | null; visibility: string } | null = $state(null);
+	let selectedCollection: {
+		id: number;
+		name: string;
+		description: string | null;
+		visibility: string;
+	} | null = $state(null);
 	let newCollectionName = $state('');
 	let newCollectionDescription = $state('');
 	let newCollectionVisibility = $state('private');
@@ -63,10 +107,28 @@
 		showDeleteModal = true;
 	}
 
-	function resetCreateForm() {
+	function resetCollectionForm() {
 		newCollectionName = '';
 		newCollectionDescription = '';
 		newCollectionVisibility = 'private';
+		savingCollection = false;
+	}
+
+	function closeCreateModal() {
+		showCreateModal = false;
+		resetCollectionForm();
+	}
+
+	function closeEditModal() {
+		showEditModal = false;
+		selectedCollection = null;
+		resetCollectionForm();
+	}
+
+	function closeDeleteModal() {
+		showDeleteModal = false;
+		selectedCollection = null;
+		savingCollection = false;
 	}
 
 	function getVisibilityIcon(visibility: string): string {
@@ -127,7 +189,7 @@
 					{/if}
 					<div class="user-info">
 						<p class="name">{profile?.display_name || data.session.user.name}</p>
-						<p class="username">@{profile?.username || ''}</p>
+						<p class="username">@{profile?.username || data.session.user?.login || ''}</p>
 						{#if profile?.verified_author}
 							<Badge variant="primary" size="sm">
 								<svg
@@ -179,7 +241,9 @@
 							stroke="currentColor"
 							stroke-width="2"
 						>
-							<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+							<path
+								d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+							/>
 						</svg>
 						Collections
 					</button>
@@ -206,13 +270,13 @@
 				</nav>
 
 				<div class="stats">
-					<div class="stat">
-						<span class="stat-value">{modules.length}</span>
-						<span class="stat-label">Modules</span>
+					<div class="stat" aria-label="{modules.length} modules">
+						<span class="stat-value">{modules.length || '—'}</span>
+						<span class="stat-label">{modules.length === 0 ? 'No modules' : 'Modules'}</span>
 					</div>
-					<div class="stat">
-						<span class="stat-value">{formatDownloads(getTotalDownloads())}</span>
-						<span class="stat-label">Downloads</span>
+					<div class="stat" aria-label="{getTotalDownloads()} total downloads">
+						<span class="stat-value">{getTotalDownloads() === 0 ? '—' : formatDownloads(getTotalDownloads())}</span>
+						<span class="stat-label">{getTotalDownloads() === 0 ? 'No downloads' : 'Downloads'}</span>
 					</div>
 				</div>
 			</aside>
@@ -318,7 +382,9 @@
 									stroke="currentColor"
 									stroke-width="1.5"
 								>
-									<path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+									<path
+										d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"
+									/>
 								</svg>
 							</div>
 							<h3>No collections yet</h3>
@@ -334,7 +400,10 @@
 									<div class="collection-info">
 										<div class="collection-header">
 											<h3>{collection.name}</h3>
-											<span class="visibility-badge" title={getVisibilityLabel(collection.visibility)}>
+											<span
+												class="visibility-badge"
+												title={getVisibilityLabel(collection.visibility)}
+											>
 												<svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor">
 													<path d={getVisibilityIcon(collection.visibility)} />
 												</svg>
@@ -374,16 +443,20 @@
 						<h1>Profile Settings</h1>
 					</div>
 
+					<ProfileCompleteness profile={profileData} />
+
 					<form
 						class="settings-form"
 						method="POST"
 						action="?/updateProfile"
 						use:enhance={() => {
 							saving = true;
+							saveStatus = '';
 							return async ({ result }) => {
 								saving = false;
 								if (result.type === 'success') {
 									toast.success('Profile saved successfully!');
+									saveStatus = 'Profile saved successfully';
 									if (profile) {
 										profile = {
 											...profile,
@@ -394,49 +467,135 @@
 									}
 								} else {
 									toast.error('Failed to save profile');
+									saveStatus = 'Failed to save profile';
 								}
 							};
 						}}
 					>
-						<div class="form-group">
-							<label for="displayName">Display Name</label>
-							<input
-								type="text"
-								id="displayName"
-								name="display_name"
-								bind:value={displayName}
-								placeholder="Your display name"
-								maxlength="50"
-							/>
-							<p class="help-text">
-								This name will be shown on your profile instead of your GitHub username.
-							</p>
-						</div>
+						<fieldset class="settings-section">
+							<legend class="section-title">Profile Information</legend>
+							<div class="form-group">
+								<div class="label-row">
+									<label for="displayName">Display Name</label>
+									<CharacterCounter current={displayName.length} max={50} />
+								</div>
+								<input
+									type="text"
+									id="displayName"
+									name="display_name"
+									bind:value={displayName}
+									placeholder="Your display name"
+									maxlength="50"
+									aria-describedby="displayName-help"
+								/>
+								<p id="displayName-help" class="help-text">
+									This name will be shown on your profile instead of your GitHub username.
+								</p>
+							</div>
 
-						<div class="form-group">
-							<label for="bio">Bio</label>
-							<textarea
-								id="bio"
-								name="bio"
-								bind:value={bio}
-								placeholder="Tell us about yourself..."
-								rows="4"
-								maxlength="500"
-							></textarea>
-							<p class="help-text">A short bio to display on your profile page.</p>
-						</div>
+							<div class="form-group">
+								<div class="label-row">
+									<label for="bio">Bio</label>
+									<CharacterCounter current={bio.length} max={500} />
+								</div>
+								<textarea
+									id="bio"
+									name="bio"
+									bind:value={bio}
+									placeholder="Tell us about yourself..."
+									rows="3"
+									maxlength="500"
+									aria-describedby="bio-help"
+								></textarea>
+								<p id="bio-help" class="help-text">A short bio to display on your profile page.</p>
+							</div>
+						</fieldset>
 
-						<div class="form-group">
-							<label for="websiteUrl">Website URL</label>
-							<input
-								type="url"
-								id="websiteUrl"
-								name="website_url"
-								bind:value={websiteUrl}
-								placeholder="https://example.com"
-							/>
-							<p class="help-text">Your personal website or blog.</p>
-						</div>
+						<fieldset class="settings-section">
+							<legend class="section-title">Links & Social</legend>
+							<div class="form-group">
+								<label for="websiteUrl">Website URL</label>
+								<input
+									type="url"
+									id="websiteUrl"
+									name="website_url"
+									bind:value={websiteUrl}
+									placeholder="https://example.com"
+									aria-describedby="websiteUrl-help"
+								/>
+								<p id="websiteUrl-help" class="help-text">Your personal website or blog.</p>
+							</div>
+
+							<div class="form-group">
+								<label for="githubUrl">GitHub Profile</label>
+								<input
+									type="url"
+									id="githubUrl"
+									name="github_url"
+									bind:value={githubUrl}
+									placeholder="https://github.com/username"
+									aria-describedby="githubUrl-help"
+									aria-invalid={Boolean(githubUrl) && !githubValid}
+									class:input-error={githubUrl && !githubValid}
+								/>
+								<p id="githubUrl-help" class="help-text">
+									{#if githubUrl && !githubValid}
+										<span class="error-text">Enter a valid GitHub profile URL</span>
+									{:else}
+										Link to your GitHub profile (separate from login).
+									{/if}
+								</p>
+							</div>
+
+							<div class="form-group">
+								<label for="twitterUrl">Twitter / X</label>
+								<input
+									type="url"
+									id="twitterUrl"
+									name="twitter_url"
+									bind:value={twitterUrl}
+									placeholder="https://x.com/username"
+									aria-describedby="twitterUrl-help"
+									aria-invalid={Boolean(twitterUrl) && !twitterValid}
+									class:input-error={twitterUrl && !twitterValid}
+								/>
+								<p id="twitterUrl-help" class="help-text">
+									{#if twitterUrl && !twitterValid}
+										<span class="error-text">Enter a valid Twitter/X profile URL</span>
+									{:else}
+										Your Twitter or X profile.
+									{/if}
+								</p>
+							</div>
+
+							<div class="form-group sponsor-field">
+								<label for="sponsorUrl">
+									<svg
+										viewBox="0 0 24 24"
+										width="16"
+										height="16"
+										fill="none"
+										stroke="currentColor"
+										stroke-width="2"
+										class="sponsor-icon"
+									>
+										<path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+									</svg>
+									Sponsor / Donate
+								</label>
+								<input
+									type="url"
+									id="sponsorUrl"
+									name="sponsor_url"
+									bind:value={sponsorUrl}
+									placeholder="https://ko-fi.com/username"
+									aria-describedby="sponsorUrl-help"
+								/>
+								<p id="sponsorUrl-help" class="help-text">
+									Link to Ko-fi, GitHub Sponsors, Buy Me a Coffee, or other donation page.
+								</p>
+							</div>
+						</fieldset>
 
 						<div class="form-actions">
 							<button type="submit" class="btn btn-primary" disabled={saving}>
@@ -447,30 +606,61 @@
 									Save Changes
 								{/if}
 							</button>
+							<span class="sr-only" role="status" aria-live="polite">{saveStatus}</span>
 						</div>
 					</form>
 
-					<div class="profile-link-section">
-						<h3>Public Profile</h3>
-						<p>View your public profile as others see it.</p>
-						{#if profile?.username}
-							<a href="/users/{profile.username}" class="btn btn-secondary">
-								<svg
-									viewBox="0 0 24 24"
-									width="16"
-									height="16"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="2"
-								>
-									<path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />
-									<polyline points="15 3 21 3 21 9" />
-									<line x1="10" y1="14" x2="21" y2="3" />
-								</svg>
-								View Public Profile
-							</a>
-						{/if}
-					</div>
+					{#if modules.length > 0}
+						<div class="featured-modules-section">
+							<h3>Featured Modules</h3>
+							<p class="section-description">
+								Pin up to {MAX_PINNED_MODULES} modules to feature on your public profile.
+								{currentPinnedModules.length}/{MAX_PINNED_MODULES} pinned.
+							</p>
+							<div class="pinnable-modules-list">
+								{#each modules as module (module.uuid)}
+									<div class="pinnable-module">
+										<div class="pinnable-module-info">
+											<span class="pinnable-module-name">{module.name}</span>
+											<span class="pinnable-module-category">{module.category}</span>
+										</div>
+										<button
+											type="button"
+											class="pin-toggle"
+											class:pinned={pinnedModules.isPinned(module.uuid, currentPinnedModules)}
+											onclick={() => pinnedModules.toggle(module.uuid)}
+											disabled={!pinnedModules.isPinned(module.uuid, currentPinnedModules) && !pinnedModules.canPin(currentPinnedModules)}
+											aria-pressed={pinnedModules.isPinned(module.uuid, currentPinnedModules)}
+											aria-label={pinnedModules.isPinned(module.uuid, currentPinnedModules) ? 'Unpin module' : 'Pin module'}
+										>
+											<svg
+												viewBox="0 0 24 24"
+												width="16"
+												height="16"
+												fill={pinnedModules.isPinned(module.uuid, currentPinnedModules) ? 'currentColor' : 'none'}
+												stroke="currentColor"
+												stroke-width="2"
+											>
+												<path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
+											</svg>
+											{pinnedModules.isPinned(module.uuid, currentPinnedModules) ? 'Pinned' : 'Pin'}
+										</button>
+									</div>
+								{/each}
+							</div>
+						</div>
+					{/if}
+
+					<ProfilePreviewCard
+						displayName={previewDisplayName}
+						username={effectiveUsername}
+						bio={bio}
+						websiteUrl={websiteUrl}
+						avatarUrl={data.session.user?.image || null}
+						moduleCount={modules.length}
+						verified={profile?.verified_author || false}
+						profileUrl={effectiveUsername ? `/users/${effectiveUsername}` : undefined}
+					/>
 				{/if}
 			</section>
 		</div>
@@ -478,7 +668,7 @@
 </main>
 
 {#if showCreateModal}
-	<Modal open={showCreateModal} title="Create Collection" onclose={() => { showCreateModal = false; resetCreateForm(); }}>
+	<Modal open={showCreateModal} title="Create Collection" onclose={closeCreateModal}>
 		<form
 			method="POST"
 			action="?/createCollection"
@@ -488,8 +678,7 @@
 					savingCollection = false;
 					if (result.type === 'success') {
 						toast.success('Collection created!');
-						showCreateModal = false;
-						resetCreateForm();
+						closeCreateModal();
 						await update();
 					} else {
 						toast.error('Failed to create collection');
@@ -532,10 +721,12 @@
 			</div>
 
 			<div class="modal-actions">
-				<button type="button" class="btn btn-secondary" onclick={() => { showCreateModal = false; resetCreateForm(); }}>
-					Cancel
-				</button>
-				<button type="submit" class="btn btn-primary" disabled={savingCollection || !newCollectionName.trim()}>
+				<button type="button" class="btn btn-secondary" onclick={closeCreateModal}> Cancel </button>
+				<button
+					type="submit"
+					class="btn btn-primary"
+					disabled={savingCollection || !newCollectionName.trim()}
+				>
 					{savingCollection ? 'Creating...' : 'Create Collection'}
 				</button>
 			</div>
@@ -544,7 +735,7 @@
 {/if}
 
 {#if showEditModal && selectedCollection}
-	<Modal open={showEditModal} title="Edit Collection" onclose={() => { showEditModal = false; selectedCollection = null; }}>
+	<Modal open={showEditModal} title="Edit Collection" onclose={closeEditModal}>
 		<form
 			method="POST"
 			action="?/updateCollection"
@@ -554,8 +745,7 @@
 					savingCollection = false;
 					if (result.type === 'success') {
 						toast.success('Collection updated!');
-						showEditModal = false;
-						selectedCollection = null;
+						closeEditModal();
 						await update();
 					} else {
 						toast.error('Failed to update collection');
@@ -592,7 +782,11 @@
 
 			<div class="form-group">
 				<label for="edit-collection-visibility">Visibility</label>
-				<select id="edit-collection-visibility" name="visibility" bind:value={newCollectionVisibility}>
+				<select
+					id="edit-collection-visibility"
+					name="visibility"
+					bind:value={newCollectionVisibility}
+				>
 					<option value="private">Private - Only you can see</option>
 					<option value="unlisted">Unlisted - Anyone with link can see</option>
 					<option value="public">Public - Visible on your profile</option>
@@ -600,10 +794,12 @@
 			</div>
 
 			<div class="modal-actions">
-				<button type="button" class="btn btn-secondary" onclick={() => { showEditModal = false; selectedCollection = null; }}>
-					Cancel
-				</button>
-				<button type="submit" class="btn btn-primary" disabled={savingCollection || !newCollectionName.trim()}>
+				<button type="button" class="btn btn-secondary" onclick={closeEditModal}> Cancel </button>
+				<button
+					type="submit"
+					class="btn btn-primary"
+					disabled={savingCollection || !newCollectionName.trim()}
+				>
 					{savingCollection ? 'Saving...' : 'Save Changes'}
 				</button>
 			</div>
@@ -612,9 +808,10 @@
 {/if}
 
 {#if showDeleteModal && selectedCollection}
-	<Modal open={showDeleteModal} title="Delete Collection" onclose={() => { showDeleteModal = false; selectedCollection = null; }}>
+	<Modal open={showDeleteModal} title="Delete Collection" onclose={closeDeleteModal}>
 		<p class="delete-warning">
-			Are you sure you want to delete "<strong>{selectedCollection.name}</strong>"? This action cannot be undone.
+			Are you sure you want to delete "<strong>{selectedCollection.name}</strong>"? This action
+			cannot be undone.
 		</p>
 		<form
 			method="POST"
@@ -625,8 +822,7 @@
 					savingCollection = false;
 					if (result.type === 'success') {
 						toast.success('Collection deleted');
-						showDeleteModal = false;
-						selectedCollection = null;
+						closeDeleteModal();
 						await update();
 					} else {
 						toast.error('Failed to delete collection');
@@ -637,9 +833,7 @@
 			<input type="hidden" name="id" value={selectedCollection.id} />
 
 			<div class="modal-actions">
-				<button type="button" class="btn btn-secondary" onclick={() => { showDeleteModal = false; selectedCollection = null; }}>
-					Cancel
-				</button>
+				<button type="button" class="btn btn-secondary" onclick={closeDeleteModal}> Cancel </button>
 				<button type="submit" class="btn btn-danger" disabled={savingCollection}>
 					{savingCollection ? 'Deleting...' : 'Delete Collection'}
 				</button>
@@ -956,6 +1150,26 @@
 		border-radius: var(--radius-lg);
 		padding: var(--space-xl);
 		margin-bottom: var(--space-xl);
+		margin-top: var(--space-lg);
+	}
+
+	.settings-section {
+		border: none;
+		padding: 0;
+		margin: 0 0 var(--space-xl) 0;
+	}
+
+	.settings-section:last-of-type {
+		margin-bottom: 0;
+	}
+
+	.section-title {
+		font-size: 0.9375rem;
+		font-weight: 600;
+		color: var(--color-text-normal);
+		margin-bottom: var(--space-md);
+		padding-bottom: var(--space-sm);
+		border-bottom: 1px solid var(--color-border);
 	}
 
 	.form-group {
@@ -963,8 +1177,13 @@
 	}
 
 	.form-group label {
-		display: block;
 		font-weight: 500;
+	}
+
+	.label-row {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
 		margin-bottom: var(--space-sm);
 	}
 
@@ -993,27 +1212,115 @@
 		margin-top: var(--space-sm);
 	}
 
-	.form-actions {
-		margin-top: var(--space-xl);
+	.error-text {
+		color: var(--color-error);
 	}
 
-	.profile-link-section {
+	.input-error {
+		border-color: var(--color-error);
+	}
+
+	.input-error:focus {
+		border-color: var(--color-error);
+		box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15);
+	}
+
+	.sponsor-field label {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-xs);
+	}
+
+	.sponsor-icon {
+		color: #ec4899;
+	}
+
+	.featured-modules-section {
 		background-color: var(--color-bg-surface);
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-lg);
 		padding: var(--space-xl);
+		margin-top: var(--space-lg);
 	}
 
-	.profile-link-section h3 {
+	.featured-modules-section h3 {
 		font-size: 1rem;
 		font-weight: 600;
 		margin-bottom: var(--space-sm);
 	}
 
-	.profile-link-section p {
+	.section-description {
 		font-size: 0.875rem;
 		color: var(--color-text-muted);
-		margin-bottom: var(--space-md);
+		margin-bottom: var(--space-lg);
+	}
+
+	.pinnable-modules-list {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-sm);
+	}
+
+	.pinnable-module {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+		padding: var(--space-md);
+		background-color: var(--color-bg-base);
+		border-radius: var(--radius-md);
+	}
+
+	.pinnable-module-info {
+		display: flex;
+		flex-direction: column;
+		gap: var(--space-2xs);
+	}
+
+	.pinnable-module-name {
+		font-weight: 500;
+	}
+
+	.pinnable-module-category {
+		font-size: 0.75rem;
+		color: var(--color-text-muted);
+		text-transform: capitalize;
+	}
+
+	.pin-toggle {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-xs);
+		padding: var(--space-sm) var(--space-md);
+		background-color: var(--color-bg-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-md);
+		font-size: 0.8125rem;
+		color: var(--color-text-muted);
+		cursor: pointer;
+		transition:
+			background-color var(--duration-fast) var(--ease-out),
+			color var(--duration-fast) var(--ease-out),
+			border-color var(--duration-fast) var(--ease-out);
+	}
+
+	.pin-toggle:hover:not(:disabled) {
+		background-color: var(--color-bg-elevated);
+		color: var(--color-text-normal);
+	}
+
+	.pin-toggle.pinned {
+		background-color: var(--color-primary);
+		border-color: var(--color-primary);
+		color: white;
+	}
+
+	.pin-toggle:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.form-actions {
+		margin-top: var(--space-xl);
 	}
 
 	.spinner {
@@ -1135,19 +1442,24 @@
 	select {
 		width: 100%;
 		padding: var(--space-md);
+		padding-right: 40px;
 		background-color: var(--color-bg-base);
 		border: 1px solid var(--color-border);
 		border-radius: var(--radius-md);
 		color: var(--color-text-normal);
 		font-size: 0.875rem;
 		cursor: pointer;
+		appearance: none;
+		background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+		background-repeat: no-repeat;
+		background-position: right 12px center;
 		transition: border-color var(--duration-fast) var(--ease-out);
 	}
 
 	select:focus {
 		outline: none;
 		border-color: var(--color-primary);
-		box-shadow: 0 0 0 3px rgba(97, 125, 250, 0.15);
+		box-shadow: var(--focus-ring);
 	}
 
 	@media (max-width: 768px) {

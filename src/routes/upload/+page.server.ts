@@ -7,18 +7,22 @@ export const load: PageServerLoad = async (event) => {
 	if (!session?.user) {
 		throw redirect(302, '/login');
 	}
+	if (session.error === 'RefreshTokenError') {
+		throw redirect(302, '/login');
+	}
 	return { session };
 };
 
 export const actions: Actions = {
 	upload: async (event) => {
 		const session = await event.locals.auth();
-		if (!session?.user) return fail(401, { message: 'Unauthorized' });
+		if (!session?.user || !session.accessToken) {
+			return fail(401, { message: 'Unauthorized' });
+		}
 
-		const sessionToken =
-			event.cookies.get('__Secure-authjs.session-token') ||
-			event.cookies.get('authjs.session-token');
-		if (!sessionToken) return fail(401, { message: 'Session expired' });
+		if (session.error === 'RefreshTokenError') {
+			return fail(401, { message: 'Session expired' });
+		}
 
 		const formData = await event.request.formData();
 		const name = formData.get('name') as string;
@@ -33,15 +37,15 @@ export const actions: Actions = {
 			return fail(400, { message: 'Missing required fields' });
 		}
 
-		const author = session.user.name?.toLowerCase().replace(/[^a-z0-9-]/g, '-') || 'anonymous';
+		const author = session.user.login?.toLowerCase().replace(/[^a-z0-9-]/g, '-') || 'anonymous';
 		const moduleName = name.toLowerCase().replace(/[^a-z0-9-]/g, '-');
 		const uuid = `${moduleName}@${author}`;
-		const cookieHeader = `authjs.session-token=${sessionToken}`;
+		const authHeader = { Authorization: `Bearer ${session.accessToken}` };
 
 		try {
 			const createRes = await fetch(`${API_BASE_URL}/api/v1/modules`, {
 				method: 'POST',
-				headers: { 'Content-Type': 'application/json', Cookie: cookieHeader },
+				headers: { 'Content-Type': 'application/json', ...authHeader },
 				body: JSON.stringify({ uuid, name, description, category, repo_url: repoUrl })
 			});
 			if (!createRes.ok) {
@@ -52,7 +56,7 @@ export const actions: Actions = {
 
 			const uploadRes = await fetch(
 				`${API_BASE_URL}/api/v1/modules/${encodeURIComponent(uuid)}/versions/${version}/upload`,
-				{ method: 'POST', headers: { Cookie: cookieHeader }, body: await packageFile.arrayBuffer() }
+				{ method: 'POST', headers: authHeader, body: await packageFile.arrayBuffer() }
 			);
 			if (!uploadRes.ok) {
 				return fail(uploadRes.status, {
@@ -64,7 +68,7 @@ export const actions: Actions = {
 				`${API_BASE_URL}/api/v1/modules/${encodeURIComponent(uuid)}/versions/${version}/publish`,
 				{
 					method: 'POST',
-					headers: { 'Content-Type': 'application/json', Cookie: cookieHeader },
+					headers: { 'Content-Type': 'application/json', ...authHeader },
 					body: JSON.stringify({ changelog: changelog || null })
 				}
 			);

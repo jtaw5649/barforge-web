@@ -56,7 +56,23 @@
 				{#if data.profile.bio}
 					<p class="bio">{data.profile.bio}</p>
 				{/if}
-					<div class="profile-meta">
+				<div class="profile-meta">
+					<span class="meta-item">
+						<svg
+							viewBox="0 0 24 24"
+							width="16"
+							height="16"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<rect x="3" y="3" width="18" height="18" rx="2" />
+							<line x1="3" y1="9" x2="21" y2="9" />
+							<line x1="9" y1="21" x2="9" y2="9" />
+						</svg>
+						<strong>{data.profile.module_count}</strong> modules
+					</span>
+					{#if data.totalDownloads > 0}
 						<span class="meta-item">
 							<svg
 								viewBox="0 0 24 24"
@@ -66,13 +82,37 @@
 								stroke="currentColor"
 								stroke-width="2"
 							>
-								<rect x="3" y="3" width="18" height="18" rx="2" />
-								<line x1="3" y1="9" x2="21" y2="9" />
-								<line x1="9" y1="21" x2="9" y2="9" />
+								<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+								<polyline points="7 10 12 15 17 10" />
+								<line x1="12" y1="15" x2="12" y2="3" />
 							</svg>
-							<strong>{data.profile.module_count}</strong> modules
+							<strong>{data.totalDownloads.toLocaleString()}</strong> downloads
 						</span>
-						<span class="meta-item">
+					{/if}
+					<span class="meta-item">
+						<svg
+							viewBox="0 0 24 24"
+							width="16"
+							height="16"
+							fill="none"
+							stroke="currentColor"
+							stroke-width="2"
+						>
+							<rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
+							<line x1="16" y1="2" x2="16" y2="6" />
+							<line x1="8" y1="2" x2="8" y2="6" />
+							<line x1="3" y1="10" x2="21" y2="10" />
+						</svg>
+						Member since {formatDate(data.profile.created_at)}
+					</span>
+					{#if data.profile.website_url}
+						<a
+							href={data.profile.website_url}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="website-link"
+							aria-label="Visit website (opens in new tab)"
+						>
 							<svg
 								viewBox="0 0 24 24"
 								width="16"
@@ -81,77 +121,89 @@
 								stroke="currentColor"
 								stroke-width="2"
 							>
-								<rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
-								<line x1="16" y1="2" x2="16" y2="6" />
-								<line x1="8" y1="2" x2="8" y2="6" />
-								<line x1="3" y1="10" x2="21" y2="10" />
+								<circle cx="12" cy="12" r="10" />
+								<line x1="2" y1="12" x2="22" y2="12" />
+								<path
+									d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
+								/>
 							</svg>
-							Member since {formatDate(data.profile.created_at)}
-						</span>
-						{#if data.profile.website_url}
-							<a
-								href={data.profile.website_url}
-								target="_blank"
-								rel="noopener noreferrer"
-								class="website-link"
-							>
-								<svg
-									viewBox="0 0 24 24"
-									width="16"
-									height="16"
-									fill="none"
-									stroke="currentColor"
-									stroke-width="2"
-								>
-									<circle cx="12" cy="12" r="10" />
-									<line x1="2" y1="12" x2="22" y2="12" />
-									<path
-										d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"
-									/>
-								</svg>
-								{data.profile.website_url.replace(/^https?:\/\//, '')}
-							</a>
-						{/if}
-					</div>
+							{data.profile.website_url.replace(/^https?:\/\//, '')}
+						</a>
+					{/if}
 				</div>
 			</div>
-		</header>
+		</div>
+	</header>
 
-		<section class="modules-section">
-			<h2>Modules by {data.profile.display_name || data.profile.username}</h2>
-			{#if data.modules.length === 0}
-				<div class="empty-state">
-					<svg
-						viewBox="0 0 24 24"
-						width="48"
-						height="48"
-						fill="none"
-						stroke="currentColor"
-						stroke-width="1.5"
-					>
-						<rect x="3" y="3" width="18" height="18" rx="2" />
-						<line x1="3" y1="9" x2="21" y2="9" />
-						<line x1="9" y1="21" x2="9" y2="9" />
-					</svg>
-					<p>No modules published yet</p>
-				</div>
-			{:else}
-				<div class="grid">
-					{#each data.modules as module, i (module.uuid)}
-						<ModuleCard
-							uuid={module.uuid}
-							name={module.name}
-							author={module.author}
-							description={module.description}
-							category={module.category}
-							downloads={module.downloads}
-							verified={module.verified_author}
-							delay={i * 50}
-						/>
-					{/each}
-				</div>
-			{/if}
+	<section class="modules-section">
+		<h2>Modules by {data.profile.display_name || data.profile.username}</h2>
+		{#if data.modules.length === 0}
+			<div class="empty-state">
+				<svg
+					viewBox="0 0 24 24"
+					width="48"
+					height="48"
+					fill="none"
+					stroke="currentColor"
+					stroke-width="1.5"
+				>
+					<rect x="3" y="3" width="18" height="18" rx="2" />
+					<line x1="3" y1="9" x2="21" y2="9" />
+					<line x1="9" y1="21" x2="9" y2="9" />
+				</svg>
+				<p>No modules published yet</p>
+			</div>
+		{:else}
+			<div class="grid">
+				{#each data.modules as module, i (module.uuid)}
+					<ModuleCard
+						uuid={module.uuid}
+						name={module.name}
+						author={module.author}
+						description={module.description}
+						category={module.category}
+						downloads={module.downloads}
+						verified={module.verified_author}
+						delay={i * 50}
+					/>
+				{/each}
+			</div>
+		{/if}
+	</section>
+
+	{#if data.collections && data.collections.length > 0}
+		<section class="collections-section">
+			<h2>Collections</h2>
+			<div class="collections-grid">
+				{#each data.collections as collection (collection.id)}
+					<a href="/collections/{collection.id}" class="collection-card">
+						<div class="collection-header">
+							<svg
+								viewBox="0 0 24 24"
+								width="20"
+								height="20"
+								fill="none"
+								stroke="currentColor"
+								stroke-width="2"
+							>
+								<rect x="3" y="3" width="7" height="7" />
+								<rect x="14" y="3" width="7" height="7" />
+								<rect x="14" y="14" width="7" height="7" />
+								<rect x="3" y="14" width="7" height="7" />
+							</svg>
+							<span class="collection-name">{collection.name}</span>
+						</div>
+						{#if collection.description}
+							<p class="collection-description">{collection.description}</p>
+						{/if}
+						<div class="collection-meta">
+							<span>{collection.module_count} {collection.module_count === 1 ? 'module' : 'modules'}</span>
+						</div>
+					</a>
+				{/each}
+			</div>
 		</section>
+	{/if}
 </main>
 
 <Footer />
@@ -310,6 +362,75 @@
 		display: grid;
 		grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
 		gap: var(--space-lg);
+	}
+
+	.collections-section {
+		margin-top: var(--space-2xl);
+	}
+
+	.collections-section h2 {
+		font-size: 1.25rem;
+		font-weight: 600;
+		margin-bottom: var(--space-lg);
+	}
+
+	.collections-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+		gap: var(--space-md);
+	}
+
+	.collection-card {
+		display: block;
+		background-color: var(--color-bg-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-lg);
+		padding: var(--space-lg);
+		text-decoration: none;
+		color: inherit;
+		transition:
+			border-color var(--duration-fast) var(--ease-out),
+			background-color var(--duration-fast) var(--ease-out);
+	}
+
+	.collection-card:hover {
+		border-color: var(--color-primary);
+		background-color: var(--color-bg-elevated);
+	}
+
+	.collection-header {
+		display: flex;
+		align-items: center;
+		gap: var(--space-sm);
+		margin-bottom: var(--space-sm);
+	}
+
+	.collection-header svg {
+		color: var(--color-primary);
+		flex-shrink: 0;
+	}
+
+	.collection-name {
+		font-weight: 600;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.collection-description {
+		font-size: 0.875rem;
+		color: var(--color-text-muted);
+		margin-bottom: var(--space-md);
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+	}
+
+	.collection-meta {
+		font-size: 0.75rem;
+		color: var(--color-text-muted);
 	}
 
 	@media (max-width: 768px) {
