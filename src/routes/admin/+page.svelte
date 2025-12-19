@@ -175,9 +175,9 @@
 						<path d="M7 11V7a5 5 0 0 1 10 0v4" />
 					</svg>
 				</div>
-				<h2>Sign In Required</h2>
-				<p>Please sign in with a moderator or admin account to access this page.</p>
-				<a href="/login" class="btn btn-primary">Sign In</a>
+				<h2>Log In Required</h2>
+				<p>Please log in with a moderator or admin account to access this page.</p>
+				<a href="/login" class="btn btn-primary">Log In</a>
 			</div>
 		</section>
 	{:else if loading}

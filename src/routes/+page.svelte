@@ -82,7 +82,7 @@
 				{#if data.session?.user}
 					<a href="/upload" class="btn btn-secondary btn-large">Upload Module</a>
 				{:else}
-					<a href="/login" class="btn btn-secondary btn-large">Sign In to Upload</a>
+					<a href="/login" class="btn btn-secondary btn-large">Log In to Upload</a>
 				{/if}
 			</div>
 		</div>

@@ -335,7 +335,7 @@
 							{userReview ? 'Edit Review' : 'Write Review'}
 						</button>
 					{:else if !data.session?.user}
-						<a href="/login" class="btn btn-secondary">Sign in to Review</a>
+						<a href="/login" class="btn btn-secondary">Log in to Review</a>
 					{/if}
 				</div>
 
