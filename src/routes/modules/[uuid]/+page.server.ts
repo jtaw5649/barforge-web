@@ -205,13 +205,16 @@ export const actions: Actions = {
 			apiFormData.append('alt_text', altText.trim());
 		}
 
-		const res = await fetch(`${API_BASE_URL}/api/v1/modules/${encodeURIComponent(uuid)}/screenshots`, {
-			method: 'POST',
-			headers: {
-				Cookie: `authjs.session-token=${sessionToken}`
-			},
-			body: apiFormData
-		});
+		const res = await fetch(
+			`${API_BASE_URL}/api/v1/modules/${encodeURIComponent(uuid)}/screenshots`,
+			{
+				method: 'POST',
+				headers: {
+					Cookie: `authjs.session-token=${sessionToken}`
+				},
+				body: apiFormData
+			}
+		);
 
 		if (!res.ok) {
 			const errorText = await res.text();

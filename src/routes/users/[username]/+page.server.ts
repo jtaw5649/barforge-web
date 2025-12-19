@@ -25,6 +25,15 @@ interface Module {
 	verified_author: boolean;
 }
 
+interface Collection {
+	id: number;
+	name: string;
+	description: string | null;
+	visibility: 'public' | 'unlisted' | 'private';
+	module_count: number;
+	created_at: string;
+}
+
 export const load: PageServerLoad = async (event) => {
 	const session = await event.locals.auth();
 	const username = event.params.username;
@@ -47,9 +56,22 @@ export const load: PageServerLoad = async (event) => {
 		modules = modulesData.modules || [];
 	}
 
+	let collections: Collection[] = [];
+	const collectionsRes = await event.fetch(
+		`${API_BASE_URL}/api/v1/users/${username}/collections?visibility=public`
+	);
+	if (collectionsRes.ok) {
+		const collectionsData = await collectionsRes.json();
+		collections = collectionsData.collections || [];
+	}
+
+	const totalDownloads = modules.reduce((sum, m) => sum + m.downloads, 0);
+
 	return {
 		session,
 		profile,
-		modules
+		modules,
+		collections,
+		totalDownloads
 	};
 };

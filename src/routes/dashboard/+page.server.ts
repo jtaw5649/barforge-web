@@ -1,6 +1,6 @@
 import type { PageServerLoad, Actions } from './$types';
 import { API_BASE_URL } from '$lib';
-import { fail } from '@sveltejs/kit';
+import { fail, redirect } from '@sveltejs/kit';
 
 interface Module {
 	uuid: string;
@@ -38,30 +38,21 @@ interface Collection {
 export const load: PageServerLoad = async (event) => {
 	const session = await event.locals.auth();
 
-	if (!session?.user) {
+	if (!session?.user || !session.accessToken) {
 		return { session, profile: null, modules: [], collections: [] };
 	}
 
-	const sessionToken =
-		event.cookies.get('__Secure-authjs.session-token') || event.cookies.get('authjs.session-token');
-
-	if (!sessionToken) {
-		return { session, profile: null, modules: [], collections: [] };
+	if (session.error === 'RefreshTokenError') {
+		throw redirect(302, '/login');
 	}
 
-	const cookieHeader = `authjs.session-token=${sessionToken}`;
+	const authHeader = { Authorization: `Bearer ${session.accessToken}` };
 
 	try {
 		const [profileRes, modulesRes, collectionsRes] = await Promise.all([
-			fetch(`${API_BASE_URL}/api/v1/users/me`, {
-				headers: { Cookie: cookieHeader }
-			}),
-			fetch(`${API_BASE_URL}/api/v1/modules/mine`, {
-				headers: { Cookie: cookieHeader }
-			}),
-			fetch(`${API_BASE_URL}/api/v1/collections`, {
-				headers: { Cookie: cookieHeader }
-			})
+			fetch(`${API_BASE_URL}/api/v1/users/me`, { headers: authHeader }),
+			fetch(`${API_BASE_URL}/api/v1/modules/mine`, { headers: authHeader }),
+			fetch(`${API_BASE_URL}/api/v1/collections`, { headers: authHeader })
 		]);
 
 		let profile: UserProfile | null = null;
@@ -91,15 +82,12 @@ export const load: PageServerLoad = async (event) => {
 export const actions: Actions = {
 	updateProfile: async (event) => {
 		const session = await event.locals.auth();
-		if (!session?.user) {
+		if (!session?.user || !session.accessToken) {
 			return fail(401, { message: 'Unauthorized' });
 		}
 
-		const sessionToken =
-			event.cookies.get('__Secure-authjs.session-token') ||
-			event.cookies.get('authjs.session-token');
-		if (!sessionToken) {
-			return fail(401, { message: 'Unauthorized' });
+		if (session.error === 'RefreshTokenError') {
+			return fail(401, { message: 'Session expired' });
 		}
 
 		const formData = await event.request.formData();
@@ -111,7 +99,7 @@ export const actions: Actions = {
 			method: 'PATCH',
 			headers: {
 				'Content-Type': 'application/json',
-				Cookie: `authjs.session-token=${sessionToken}`
+				Authorization: `Bearer ${session.accessToken}`
 			},
 			body: JSON.stringify({
 				display_name: display_name || null,
@@ -129,21 +117,18 @@ export const actions: Actions = {
 
 	createCollection: async (event) => {
 		const session = await event.locals.auth();
-		if (!session?.user) {
+		if (!session?.user || !session.accessToken) {
 			return fail(401, { message: 'Unauthorized' });
 		}
 
-		const sessionToken =
-			event.cookies.get('__Secure-authjs.session-token') ||
-			event.cookies.get('authjs.session-token');
-		if (!sessionToken) {
-			return fail(401, { message: 'Unauthorized' });
+		if (session.error === 'RefreshTokenError') {
+			return fail(401, { message: 'Session expired' });
 		}
 
 		const formData = await event.request.formData();
 		const name = formData.get('name') as string;
 		const description = formData.get('description') as string | null;
-		const visibility = formData.get('visibility') as string || 'private';
+		const visibility = (formData.get('visibility') as string) || 'private';
 
 		if (!name || name.trim().length === 0) {
 			return fail(400, { message: 'Collection name is required' });
@@ -153,7 +138,7 @@ export const actions: Actions = {
 			method: 'POST',
 			headers: {
 				'Content-Type': 'application/json',
-				Cookie: `authjs.session-token=${sessionToken}`
+				Authorization: `Bearer ${session.accessToken}`
 			},
 			body: JSON.stringify({
 				name: name.trim(),
@@ -172,15 +157,12 @@ export const actions: Actions = {
 
 	updateCollection: async (event) => {
 		const session = await event.locals.auth();
-		if (!session?.user) {
+		if (!session?.user || !session.accessToken) {
 			return fail(401, { message: 'Unauthorized' });
 		}
 
-		const sessionToken =
-			event.cookies.get('__Secure-authjs.session-token') ||
-			event.cookies.get('authjs.session-token');
-		if (!sessionToken) {
-			return fail(401, { message: 'Unauthorized' });
+		if (session.error === 'RefreshTokenError') {
+			return fail(401, { message: 'Session expired' });
 		}
 
 		const formData = await event.request.formData();
@@ -197,7 +179,7 @@ export const actions: Actions = {
 			method: 'PATCH',
 			headers: {
 				'Content-Type': 'application/json',
-				Cookie: `authjs.session-token=${sessionToken}`
+				Authorization: `Bearer ${session.accessToken}`
 			},
 			body: JSON.stringify({
 				name: name?.trim() || undefined,
@@ -215,15 +197,12 @@ export const actions: Actions = {
 
 	deleteCollection: async (event) => {
 		const session = await event.locals.auth();
-		if (!session?.user) {
+		if (!session?.user || !session.accessToken) {
 			return fail(401, { message: 'Unauthorized' });
 		}
 
-		const sessionToken =
-			event.cookies.get('__Secure-authjs.session-token') ||
-			event.cookies.get('authjs.session-token');
-		if (!sessionToken) {
-			return fail(401, { message: 'Unauthorized' });
+		if (session.error === 'RefreshTokenError') {
+			return fail(401, { message: 'Session expired' });
 		}
 
 		const formData = await event.request.formData();
@@ -236,7 +215,7 @@ export const actions: Actions = {
 		const res = await fetch(`${API_BASE_URL}/api/v1/collections/${id}`, {
 			method: 'DELETE',
 			headers: {
-				Cookie: `authjs.session-token=${sessionToken}`
+				Authorization: `Bearer ${session.accessToken}`
 			}
 		});
 
