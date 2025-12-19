@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="static/icons/logo.svg" alt="Waybar Marketplace" width="80" height="80">
+</p>
+
 <h1 align="center">Waybar Marketplace</h1>
 
 <p align="center">
@@ -15,6 +19,10 @@
   <img src="https://img.shields.io/badge/SvelteKit-5.0-orange?style=flat-square&logo=svelte" alt="SvelteKit">
   <img src="https://img.shields.io/badge/Cloudflare-Pages-blue?style=flat-square&logo=cloudflare" alt="Cloudflare">
   <img src="https://img.shields.io/badge/License-GPL--3.0-blue?style=flat-square" alt="License">
+</p>
+
+<p align="center">
+  <img src="static/screenshots/homepage.png" alt="Waybar Marketplace browse view" width="800">
 </p>
 
 ---
