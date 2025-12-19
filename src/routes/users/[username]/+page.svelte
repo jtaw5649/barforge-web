@@ -123,7 +123,12 @@
 							Member since {formatDate(profile.created_at)}
 						</span>
 						{#if profile.website_url}
-							<a href={profile.website_url} target="_blank" rel="noopener noreferrer" class="website-link">
+							<a
+								href={profile.website_url}
+								target="_blank"
+								rel="noopener noreferrer"
+								class="website-link"
+							>
 								{profile.website_url.replace(/^https?:\/\//, '')}
 							</a>
 						{/if}

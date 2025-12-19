@@ -213,7 +213,13 @@
 				</div>
 
 				{#if showReviewForm}
-					<form class="review-form" onsubmit={(e) => { e.preventDefault(); submitReview(); }}>
+					<form
+						class="review-form"
+						onsubmit={(e) => {
+							e.preventDefault();
+							submitReview();
+						}}
+					>
 						{#if reviewError}
 							<div class="form-error">{reviewError}</div>
 						{/if}

@@ -225,9 +225,19 @@
 						<h1>Profile Settings</h1>
 					</div>
 
-					<form class="settings-form" onsubmit={(e) => { e.preventDefault(); saveProfile(); }}>
+					<form
+						class="settings-form"
+						onsubmit={(e) => {
+							e.preventDefault();
+							saveProfile();
+						}}
+					>
 						{#if saveMessage}
-							<div class="message" class:success={saveMessage.type === 'success'} class:error={saveMessage.type === 'error'}>
+							<div
+								class="message"
+								class:success={saveMessage.type === 'success'}
+								class:error={saveMessage.type === 'error'}
+							>
 								{saveMessage.text}
 							</div>
 						{/if}
@@ -241,7 +251,9 @@
 								placeholder="Your display name"
 								maxlength="50"
 							/>
-							<p class="help-text">This name will be shown on your profile instead of your GitHub username.</p>
+							<p class="help-text">
+								This name will be shown on your profile instead of your GitHub username.
+							</p>
 						</div>
 
 						<div class="form-group">

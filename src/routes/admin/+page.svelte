@@ -205,7 +205,12 @@
 									<span>{formatDate(submission.submitted_at)}</span>
 								</div>
 								<div class="submission-actions">
-									<a href={submission.repo_url} target="_blank" rel="noopener" class="btn btn-secondary">
+									<a
+										href={submission.repo_url}
+										target="_blank"
+										rel="noopener"
+										class="btn btn-secondary"
+									>
 										View Repo
 									</a>
 									<button
@@ -232,15 +237,23 @@
 	{/if}
 
 	{#if showRejectModal !== null}
-		<div class="modal-overlay" role="dialog" aria-modal="true" tabindex="-1" onclick={() => (showRejectModal = null)} onkeydown={(e) => e.key === 'Escape' && (showRejectModal = null)}>
-			<div class="modal" role="document" onclick={(e) => e.stopPropagation()} onkeydown={(e) => e.stopPropagation()}>
+		<div
+			class="modal-overlay"
+			role="dialog"
+			aria-modal="true"
+			tabindex="-1"
+			onclick={() => (showRejectModal = null)}
+			onkeydown={(e) => e.key === 'Escape' && (showRejectModal = null)}
+		>
+			<div
+				class="modal"
+				role="document"
+				onclick={(e) => e.stopPropagation()}
+				onkeydown={(e) => e.stopPropagation()}
+			>
 				<h3>Reject Submission</h3>
 				<p>Please provide a reason for rejecting this submission:</p>
-				<textarea
-					bind:value={rejectReason}
-					placeholder="Rejection reason..."
-					rows="3"
-				></textarea>
+				<textarea bind:value={rejectReason} placeholder="Rejection reason..." rows="3"></textarea>
 				<div class="modal-actions">
 					<button class="btn btn-secondary" onclick={() => (showRejectModal = null)}>
 						Cancel

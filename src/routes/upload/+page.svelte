@@ -41,7 +41,8 @@
 
 	function generateUuid(): string {
 		const moduleName = name.toLowerCase().replace(/[^a-z0-9-]/g, '-');
-		const author = data.session?.user?.name?.toLowerCase().replace(/[^a-z0-9-]/g, '-') || 'anonymous';
+		const author =
+			data.session?.user?.name?.toLowerCase().replace(/[^a-z0-9-]/g, '-') || 'anonymous';
 		return `${moduleName}@${author}`;
 	}
 
@@ -153,7 +154,11 @@
 				<div class="form-group">
 					<div class="label-row">
 						<label for="description">Description (Markdown supported)</label>
-						<button type="button" class="preview-toggle" onclick={() => (showPreview = !showPreview)}>
+						<button
+							type="button"
+							class="preview-toggle"
+							onclick={() => (showPreview = !showPreview)}
+						>
 							{showPreview ? 'Edit' : 'Preview'}
 						</button>
 					</div>
@@ -339,9 +344,15 @@ Supports **Markdown** formatting:
 		margin-bottom: var(--space-sm);
 	}
 
-	.markdown-preview :global(h1) { font-size: 1.5rem; }
-	.markdown-preview :global(h2) { font-size: 1.25rem; }
-	.markdown-preview :global(h3) { font-size: 1.125rem; }
+	.markdown-preview :global(h1) {
+		font-size: 1.5rem;
+	}
+	.markdown-preview :global(h2) {
+		font-size: 1.25rem;
+	}
+	.markdown-preview :global(h3) {
+		font-size: 1.125rem;
+	}
 
 	.markdown-preview :global(p) {
 		margin-bottom: var(--space-md);

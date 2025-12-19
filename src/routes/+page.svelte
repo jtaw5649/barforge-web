@@ -73,8 +73,8 @@
 		<div class="hero-content">
 			<h1>Discover modules for your Waybar</h1>
 			<p>
-				Find community-created modules to enhance your Waybar experience.
-				Install with a single click using Waybar Manager.
+				Find community-created modules to enhance your Waybar experience. Install with a single
+				click using Waybar Manager.
 			</p>
 			<div class="hero-actions">
 				<a href="/browse" class="btn btn-primary btn-large">Browse Modules</a>

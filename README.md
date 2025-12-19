@@ -53,11 +53,11 @@ npm run dev
 
 ### Environment Variables
 
-| Variable | Description |
-|----------|-------------|
-| `AUTH_SECRET` | Random secret for Auth.js sessions |
-| `AUTH_GITHUB_ID` | GitHub OAuth App Client ID |
-| `AUTH_GITHUB_SECRET` | GitHub OAuth App Client Secret |
+| Variable             | Description                        |
+| -------------------- | ---------------------------------- |
+| `AUTH_SECRET`        | Random secret for Auth.js sessions |
+| `AUTH_GITHUB_ID`     | GitHub OAuth App Client ID         |
+| `AUTH_GITHUB_SECRET` | GitHub OAuth App Client Secret     |
 
 ## Deployment
 
@@ -73,8 +73,8 @@ wrangler pages deploy .svelte-kit/cloudflare
 
 ## Related
 
-| Project | Description |
-|---------|-------------|
+| Project                                                      | Description                                     |
+| ------------------------------------------------------------ | ----------------------------------------------- |
 | [waybar-manager](https://github.com/jtaw5649/waybar-manager) | Desktop application for managing waybar modules |
 
 ## License
