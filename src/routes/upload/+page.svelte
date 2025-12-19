@@ -1,6 +1,12 @@
 <script lang="ts">
 	import { API_BASE_URL } from '$lib';
 	import type { PageData } from './$types';
+	import { marked } from 'marked';
+
+	marked.setOptions({
+		gfm: true,
+		breaks: true
+	});
 
 	let { data }: { data: PageData } = $props();
 
@@ -31,6 +37,7 @@
 	let loading = $state(false);
 	let error: string | null = $state(null);
 	let success = $state(false);
+	let showPreview = $state(false);
 
 	function generateUuid(): string {
 		const moduleName = name.toLowerCase().replace(/[^a-z0-9-]/g, '-');
@@ -144,15 +151,36 @@
 				</div>
 
 				<div class="form-group">
-					<label for="description">Description</label>
-					<textarea
-						id="description"
-						bind:value={description}
-						placeholder="A brief description of what your module does..."
-						required
-						maxlength="1000"
-						rows="3"
-					></textarea>
+					<div class="label-row">
+						<label for="description">Description (Markdown supported)</label>
+						<button type="button" class="preview-toggle" onclick={() => (showPreview = !showPreview)}>
+							{showPreview ? 'Edit' : 'Preview'}
+						</button>
+					</div>
+					{#if showPreview}
+						<div class="markdown-preview">
+							{#if description}
+								{@html marked.parse(description)}
+							{:else}
+								<span class="placeholder">Preview will appear here...</span>
+							{/if}
+						</div>
+					{:else}
+						<textarea
+							id="description"
+							bind:value={description}
+							placeholder="A brief description of what your module does...
+
+Supports **Markdown** formatting:
+- Lists
+- `code`
+- [links](url)
+- etc."
+							required
+							maxlength="5000"
+							rows="8"
+						></textarea>
+					{/if}
 				</div>
 
 				<div class="form-row">
@@ -267,6 +295,98 @@
 		font-size: 0.875rem;
 		font-weight: 500;
 		color: var(--color-text-normal);
+	}
+
+	.label-row {
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+
+	.preview-toggle {
+		background: none;
+		border: 1px solid var(--color-border);
+		color: var(--color-text-muted);
+		padding: var(--space-xs) var(--space-sm);
+		border-radius: var(--radius-sm);
+		font-size: 0.75rem;
+		cursor: pointer;
+	}
+
+	.preview-toggle:hover {
+		color: var(--color-text-normal);
+		border-color: var(--color-primary);
+	}
+
+	.markdown-preview {
+		padding: var(--space-md);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-md);
+		background-color: var(--color-bg-surface);
+		min-height: 200px;
+		line-height: 1.6;
+	}
+
+	.markdown-preview .placeholder {
+		color: var(--color-text-faint);
+	}
+
+	.markdown-preview :global(h1),
+	.markdown-preview :global(h2),
+	.markdown-preview :global(h3) {
+		font-weight: 600;
+		margin-top: var(--space-md);
+		margin-bottom: var(--space-sm);
+	}
+
+	.markdown-preview :global(h1) { font-size: 1.5rem; }
+	.markdown-preview :global(h2) { font-size: 1.25rem; }
+	.markdown-preview :global(h3) { font-size: 1.125rem; }
+
+	.markdown-preview :global(p) {
+		margin-bottom: var(--space-md);
+	}
+
+	.markdown-preview :global(code) {
+		background-color: var(--color-bg-elevated);
+		padding: 0.2em 0.4em;
+		border-radius: var(--radius-sm);
+		font-size: 0.875em;
+		font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+	}
+
+	.markdown-preview :global(pre) {
+		background-color: var(--color-bg-elevated);
+		padding: var(--space-md);
+		border-radius: var(--radius-md);
+		overflow-x: auto;
+		margin-bottom: var(--space-md);
+	}
+
+	.markdown-preview :global(pre code) {
+		background: none;
+		padding: 0;
+	}
+
+	.markdown-preview :global(ul),
+	.markdown-preview :global(ol) {
+		padding-left: var(--space-xl);
+		margin-bottom: var(--space-md);
+	}
+
+	.markdown-preview :global(li) {
+		margin-bottom: var(--space-xs);
+	}
+
+	.markdown-preview :global(blockquote) {
+		border-left: 3px solid var(--color-border);
+		padding-left: var(--space-md);
+		margin-left: 0;
+		color: var(--color-text-muted);
+	}
+
+	.markdown-preview :global(a) {
+		color: var(--color-primary);
 	}
 
 	input,

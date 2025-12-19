@@ -31,7 +31,9 @@
   },
   "dependencies": {
     "@auth/core": "^0.38.0",
-    "@auth/sveltekit": "^1.11.1"
+    "@auth/sveltekit": "^1.11.1",
+    "@types/marked": "^5.0.2",
+    "marked": "^17.0.1"
   },
   "type": "module"
 }

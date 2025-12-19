@@ -1,6 +1,12 @@
 <script lang="ts">
 	import { API_BASE_URL } from '$lib';
 	import type { PageData } from './$types';
+	import { marked } from 'marked';
+
+	marked.setOptions({
+		gfm: true,
+		breaks: true
+	});
 
 	let { data }: { data: PageData } = $props();
 
@@ -178,7 +184,9 @@
 
 		<section class="content">
 			<div class="module-info">
-				<p class="description">{module.description}</p>
+				<div class="description markdown-body">
+					{@html marked.parse(module.description)}
+				</div>
 
 				<div class="meta">
 					<span class="category">{module.category}</span>
@@ -356,9 +364,99 @@
 	}
 
 	.description {
-		font-size: 1.125rem;
-		line-height: 1.6;
+		font-size: 1rem;
+		line-height: 1.7;
 		margin-bottom: var(--space-lg);
+	}
+
+	.description :global(h1),
+	.description :global(h2),
+	.description :global(h3) {
+		font-weight: 600;
+		margin-top: var(--space-lg);
+		margin-bottom: var(--space-md);
+	}
+
+	.description :global(h1) {
+		font-size: 1.5rem;
+	}
+
+	.description :global(h2) {
+		font-size: 1.25rem;
+	}
+
+	.description :global(h3) {
+		font-size: 1.125rem;
+	}
+
+	.description :global(p) {
+		margin-bottom: var(--space-md);
+	}
+
+	.description :global(code) {
+		background-color: var(--color-bg-elevated);
+		padding: 0.2em 0.4em;
+		border-radius: var(--radius-sm);
+		font-size: 0.875em;
+		font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+	}
+
+	.description :global(pre) {
+		background-color: var(--color-bg-elevated);
+		padding: var(--space-md);
+		border-radius: var(--radius-md);
+		overflow-x: auto;
+		margin-bottom: var(--space-md);
+	}
+
+	.description :global(pre code) {
+		background: none;
+		padding: 0;
+	}
+
+	.description :global(ul),
+	.description :global(ol) {
+		padding-left: var(--space-xl);
+		margin-bottom: var(--space-md);
+	}
+
+	.description :global(li) {
+		margin-bottom: var(--space-xs);
+	}
+
+	.description :global(blockquote) {
+		border-left: 3px solid var(--color-border);
+		padding-left: var(--space-md);
+		margin-left: 0;
+		color: var(--color-text-muted);
+		margin-bottom: var(--space-md);
+	}
+
+	.description :global(a) {
+		color: var(--color-primary);
+	}
+
+	.description :global(img) {
+		max-width: 100%;
+		border-radius: var(--radius-md);
+	}
+
+	.description :global(table) {
+		width: 100%;
+		border-collapse: collapse;
+		margin-bottom: var(--space-md);
+	}
+
+	.description :global(th),
+	.description :global(td) {
+		border: 1px solid var(--color-border);
+		padding: var(--space-sm) var(--space-md);
+		text-align: left;
+	}
+
+	.description :global(th) {
+		background-color: var(--color-bg-elevated);
+		font-weight: 600;
 	}
 
 	.meta {
