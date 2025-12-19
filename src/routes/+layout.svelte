@@ -2,9 +2,19 @@
 	import type { Snippet } from 'svelte';
 	import '../app.css';
 	import Toast from '$lib/components/Toast.svelte';
+	import { focusSearchInput } from '$lib/stores/search';
 
 	let { children }: { children: Snippet } = $props();
+
+	function handleKeydown(e: KeyboardEvent) {
+		if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+			e.preventDefault();
+			focusSearchInput();
+		}
+	}
 </script>
+
+<svelte:window onkeydown={handleKeydown} />
 
 <svelte:head>
 	<title>Waybar Modules Marketplace</title>

@@ -23,6 +23,8 @@
 		closeMobileMenu();
 		signOut();
 	}
+
+	const loginUrl = $derived(`/login?redirectTo=${encodeURIComponent($page.url.pathname + $page.url.search)}`);
 </script>
 
 <header>
@@ -66,7 +68,7 @@
 				</a>
 				<button class="btn btn-small btn-ghost" onclick={() => signOut()}>Sign Out</button>
 			{:else}
-				<a href="/login" class="btn btn-small btn-primary">Sign In</a>
+				<a href={loginUrl} class="btn btn-small btn-primary">Sign In</a>
 			{/if}
 		</div>
 
@@ -127,7 +129,7 @@
 				<button class="mobile-link mobile-button" onclick={handleSignOut}>Sign Out</button>
 			{:else}
 				<div class="mobile-divider"></div>
-				<a href="/login" class="btn btn-primary mobile-cta" onclick={closeMobileMenu}>Sign In</a>
+				<a href={loginUrl} class="btn btn-primary mobile-cta" onclick={closeMobileMenu}>Sign In</a>
 			{/if}
 		</nav>
 	{/if}

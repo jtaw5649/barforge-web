@@ -15,7 +15,7 @@
 		button: { w: '80px', h: '36px', radius: 'var(--radius-md)' }
 	};
 
-	const style = variantStyles[variant];
+	const style = $derived(variantStyles[variant]);
 </script>
 
 <div

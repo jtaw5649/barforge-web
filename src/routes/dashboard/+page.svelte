@@ -1,41 +1,14 @@
 <script lang="ts">
-	import { API_BASE_URL } from '$lib';
+	import { enhance } from '$app/forms';
+	import { onMount } from 'svelte';
 	import type { PageData } from './$types';
 	import Header from '$lib/components/Header.svelte';
 	import Footer from '$lib/components/Footer.svelte';
-	import Skeleton from '$lib/components/Skeleton.svelte';
 	import Badge from '$lib/components/Badge.svelte';
 	import { toast } from '$lib/stores/toast';
 
 	let { data }: { data: PageData } = $props();
 
-	interface Module {
-		uuid: string;
-		name: string;
-		author: string;
-		description: string;
-		category: string;
-		downloads: number;
-		rating: number | null;
-		version: { major: number; minor: number; patch: number } | null;
-	}
-
-	interface UserProfile {
-		id: number;
-		username: string;
-		display_name: string | null;
-		avatar_url: string | null;
-		bio: string | null;
-		website_url: string | null;
-		verified_author: boolean;
-		module_count: number;
-		created_at: string;
-	}
-
-	let modules: Module[] = $state([]);
-	let profile: UserProfile | null = $state(null);
-	let loading = $state(true);
-	let error: string | null = $state(null);
 	let activeTab: 'modules' | 'settings' = $state('modules');
 
 	let displayName = $state('');
@@ -43,74 +16,14 @@
 	let websiteUrl = $state('');
 	let saving = $state(false);
 
-	$effect(() => {
-		if (data.session?.user) {
-			fetchDashboardData();
-		} else {
-			loading = false;
-		}
+	let profile = $derived(data.profile);
+	let modules = $derived(data.modules || []);
+
+	onMount(() => {
+		displayName = data.profile?.display_name || '';
+		bio = data.profile?.bio || '';
+		websiteUrl = data.profile?.website_url || '';
 	});
-
-	async function fetchDashboardData() {
-		try {
-			const [profileRes, modulesRes] = await Promise.all([
-				fetch(`${API_BASE_URL}/api/v1/users/me`, { credentials: 'include' }),
-				fetch(`${API_BASE_URL}/api/v1/modules/mine`, { credentials: 'include' })
-			]);
-
-			if (profileRes.ok) {
-				const profileData = await profileRes.json();
-				profile = profileData;
-				displayName = profileData.display_name || '';
-				bio = profileData.bio || '';
-				websiteUrl = profileData.website_url || '';
-			}
-
-			if (modulesRes.ok) {
-				const modulesData = await modulesRes.json();
-				modules = modulesData.modules || [];
-			}
-		} catch (e) {
-			error = e instanceof Error ? e.message : 'Unknown error';
-		} finally {
-			loading = false;
-		}
-	}
-
-	async function saveProfile() {
-		saving = true;
-
-		try {
-			const res = await fetch(`${API_BASE_URL}/api/v1/users/me`, {
-				method: 'PATCH',
-				credentials: 'include',
-				headers: { 'Content-Type': 'application/json' },
-				body: JSON.stringify({
-					display_name: displayName || null,
-					bio: bio || null,
-					website_url: websiteUrl || null
-				})
-			});
-
-			if (res.ok) {
-				toast.success('Profile saved successfully!');
-				if (profile) {
-					profile = {
-						...profile,
-						display_name: displayName || null,
-						bio: bio || null,
-						website_url: websiteUrl || null
-					};
-				}
-			} else {
-				toast.error('Failed to save profile');
-			}
-		} catch {
-			toast.error('Network error');
-		} finally {
-			saving = false;
-		}
-	}
 
 	function formatDownloads(n: number): string {
 		if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
@@ -149,35 +62,6 @@
 			<p>You need to sign in to access your dashboard.</p>
 			<a href="/login" class="btn btn-primary">Sign In with GitHub</a>
 		</div>
-	{:else if loading}
-		<div class="dashboard">
-			<aside class="sidebar">
-				<div class="user-card">
-					<Skeleton variant="avatar" class="avatar-skeleton" />
-					<div class="user-info">
-						<Skeleton variant="text" class="name-skeleton" />
-						<Skeleton variant="text" class="username-skeleton" />
-					</div>
-				</div>
-				<nav class="sidebar-nav">
-					<Skeleton variant="button" class="nav-skeleton" />
-					<Skeleton variant="button" class="nav-skeleton" />
-				</nav>
-			</aside>
-			<section class="content">
-				<Skeleton variant="text" class="title-skeleton" />
-				<div class="modules-list">
-					{#each Array(3) as _, i (i)}
-						<div class="module-row-skeleton">
-							<Skeleton variant="text" class="module-name-skeleton" />
-							<Skeleton variant="text" class="module-meta-skeleton" />
-						</div>
-					{/each}
-				</div>
-			</section>
-		</div>
-	{:else if error}
-		<div class="error-state">{error}</div>
 	{:else}
 		<div class="dashboard">
 			<aside class="sidebar">
@@ -342,9 +226,26 @@
 
 					<form
 						class="settings-form"
-						onsubmit={(e) => {
-							e.preventDefault();
-							saveProfile();
+						method="POST"
+						action="?/updateProfile"
+						use:enhance={() => {
+							saving = true;
+							return async ({ result }) => {
+								saving = false;
+								if (result.type === 'success') {
+									toast.success('Profile saved successfully!');
+									if (profile) {
+										profile = {
+											...profile,
+											display_name: displayName || null,
+											bio: bio || null,
+											website_url: websiteUrl || null
+										};
+									}
+								} else {
+									toast.error('Failed to save profile');
+								}
+							};
 						}}
 					>
 						<div class="form-group">
@@ -352,6 +253,7 @@
 							<input
 								type="text"
 								id="displayName"
+								name="display_name"
 								bind:value={displayName}
 								placeholder="Your display name"
 								maxlength="50"
@@ -365,6 +267,7 @@
 							<label for="bio">Bio</label>
 							<textarea
 								id="bio"
+								name="bio"
 								bind:value={bio}
 								placeholder="Tell us about yourself..."
 								rows="4"
@@ -378,6 +281,7 @@
 							<input
 								type="url"
 								id="websiteUrl"
+								name="website_url"
 								bind:value={websiteUrl}
 								placeholder="https://example.com"
 							/>
@@ -432,8 +336,7 @@
 		flex-direction: column;
 	}
 
-	.auth-required,
-	.error-state {
+	.auth-required {
 		flex: 1;
 		display: flex;
 		flex-direction: column;
@@ -801,54 +704,6 @@
 		to {
 			transform: rotate(360deg);
 		}
-	}
-
-	.sidebar :global(.avatar-skeleton) {
-		width: 48px;
-		height: 48px;
-		border-radius: 50%;
-	}
-
-	.sidebar :global(.name-skeleton) {
-		width: 120px;
-		height: 18px;
-		margin-bottom: var(--space-xs);
-	}
-
-	.sidebar :global(.username-skeleton) {
-		width: 80px;
-		height: 14px;
-	}
-
-	.sidebar :global(.nav-skeleton) {
-		width: 100%;
-		height: 42px;
-		margin-bottom: var(--space-xs);
-	}
-
-	.content :global(.title-skeleton) {
-		width: 150px;
-		height: 28px;
-		margin-bottom: var(--space-xl);
-	}
-
-	.module-row-skeleton {
-		background-color: var(--color-bg-surface);
-		border: 1px solid var(--color-border);
-		border-radius: var(--radius-lg);
-		padding: var(--space-lg);
-		margin-bottom: var(--space-md);
-	}
-
-	.module-row-skeleton :global(.module-name-skeleton) {
-		width: 200px;
-		height: 20px;
-		margin-bottom: var(--space-sm);
-	}
-
-	.module-row-skeleton :global(.module-meta-skeleton) {
-		width: 300px;
-		height: 14px;
 	}
 
 	@media (max-width: 768px) {

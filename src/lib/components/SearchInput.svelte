@@ -1,12 +1,16 @@
 <script lang="ts">
 	import { goto } from '$app/navigation';
+	import { onMount } from 'svelte';
+	import { registerSearchInput, unregisterSearchInput } from '$lib/stores/search';
 
 	interface Props {
 		value?: string;
 		placeholder?: string;
 		size?: 'sm' | 'md' | 'lg';
 		autofocus?: boolean;
+		debounce?: number;
 		onsubmit?: (query: string) => void;
+		oninput?: (query: string) => void;
 	}
 
 	let {
@@ -14,8 +18,28 @@
 		placeholder = 'Search modules...',
 		size = 'md',
 		autofocus = false,
-		onsubmit
+		debounce = 0,
+		onsubmit,
+		oninput
 	}: Props = $props();
+
+	let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+	function handleInput() {
+		if (!oninput) return;
+
+		if (debounceTimer) {
+			clearTimeout(debounceTimer);
+		}
+
+		if (debounce > 0) {
+			debounceTimer = setTimeout(() => {
+				oninput(value);
+			}, debounce);
+		} else {
+			oninput(value);
+		}
+	}
 
 	const placeholders = [
 		'Search modules...',
@@ -25,11 +49,18 @@
 		'Browse media controls...'
 	];
 
-	let currentPlaceholder = $state(placeholder);
+	let displayPlaceholder = $state('');
 	let placeholderIndex = $state(0);
 	let charIndex = $state(0);
 	let isDeleting = $state(false);
 	let isFocused = $state(false);
+	let inputRef: HTMLInputElement | null = $state(null);
+
+	onMount(() => {
+		displayPlaceholder = placeholder;
+		registerSearchInput(() => inputRef?.focus());
+		return () => unregisterSearchInput();
+	});
 
 	$effect(() => {
 		if (isFocused || value) return;
@@ -52,7 +83,7 @@
 				placeholderIndex = (placeholderIndex + 1) % placeholders.length;
 			} else {
 				charIndex = isDeleting ? charIndex - 1 : charIndex + 1;
-				currentPlaceholder = placeholders[placeholderIndex].slice(0, charIndex);
+				displayPlaceholder = placeholders[placeholderIndex].slice(0, charIndex);
 			}
 		}, pauseTime || typeSpeed);
 
@@ -70,7 +101,7 @@
 
 	function handleFocus() {
 		isFocused = true;
-		currentPlaceholder = placeholders[0];
+		displayPlaceholder = placeholders[0];
 	}
 
 	function handleBlur() {
@@ -98,15 +129,18 @@
 			<line x1="21" y1="21" x2="16.65" y2="16.65" />
 		</svg>
 	</div>
+	<!-- svelte-ignore a11y_autofocus -->
 	<input
 		type="search"
+		bind:this={inputRef}
 		bind:value
-		placeholder={currentPlaceholder}
+		placeholder={displayPlaceholder}
 		class="search-input"
 		{autofocus}
 		onfocus={handleFocus}
 		onblur={handleBlur}
 		onkeydown={handleKeydown}
+		oninput={handleInput}
 		aria-label="Search modules"
 	/>
 	<div class="search-shortcut" aria-hidden="true">

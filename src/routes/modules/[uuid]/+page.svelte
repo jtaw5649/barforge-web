@@ -80,6 +80,14 @@
 	let reviewLoading = $state(false);
 	let reviewError: string | null = $state(null);
 
+	const REVIEWS_PER_PAGE = 10;
+	let reviewPage = $state(1);
+
+	const totalReviewPages = $derived(Math.ceil(reviews.length / REVIEWS_PER_PAGE));
+	const paginatedReviews = $derived(
+		reviews.slice((reviewPage - 1) * REVIEWS_PER_PAGE, reviewPage * REVIEWS_PER_PAGE)
+	);
+
 	const categoryVariant = $derived.by(() => {
 		if (!module) return 'gray';
 		return categoryVariants[module.category.toLowerCase()] || 'gray';
@@ -412,7 +420,7 @@
 					</div>
 				{:else}
 					<div class="reviews-list">
-						{#each reviews as review (review.id)}
+						{#each paginatedReviews as review (review.id)}
 							<div class="review-card">
 								<div class="review-header">
 									<div class="review-user">
@@ -439,6 +447,36 @@
 							</div>
 						{/each}
 					</div>
+
+					{#if totalReviewPages > 1}
+						<nav class="review-pagination" aria-label="Reviews pagination">
+							<button
+								class="pagination-btn"
+								disabled={reviewPage === 1}
+								onclick={() => (reviewPage = reviewPage - 1)}
+								aria-label="Previous reviews"
+							>
+								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+									<polyline points="15 18 9 12 15 6" />
+								</svg>
+								Previous
+							</button>
+							<span class="pagination-info">
+								Page {reviewPage} of {totalReviewPages}
+							</span>
+							<button
+								class="pagination-btn"
+								disabled={reviewPage === totalReviewPages}
+								onclick={() => (reviewPage = reviewPage + 1)}
+								aria-label="Next reviews"
+							>
+								Next
+								<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+									<polyline points="9 18 15 12 9 6" />
+								</svg>
+							</button>
+						</nav>
+					{/if}
 				{/if}
 			</div>
 		</div>
@@ -864,6 +902,45 @@
 	.review-body {
 		color: var(--color-text-muted);
 		line-height: 1.6;
+	}
+
+	.review-pagination {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: var(--space-lg);
+		margin-top: var(--space-xl);
+		padding-top: var(--space-lg);
+		border-top: 1px solid var(--color-border);
+	}
+
+	.review-pagination .pagination-btn {
+		display: inline-flex;
+		align-items: center;
+		gap: var(--space-xs);
+		padding: var(--space-sm) var(--space-md);
+		background-color: var(--color-bg-surface);
+		border: 1px solid var(--color-border);
+		border-radius: var(--radius-md);
+		color: var(--color-text-muted);
+		font-size: 0.875rem;
+		cursor: pointer;
+		transition: all var(--duration-fast) var(--ease-out);
+	}
+
+	.review-pagination .pagination-btn:hover:not(:disabled) {
+		background-color: var(--color-bg-elevated);
+		color: var(--color-text-normal);
+	}
+
+	.review-pagination .pagination-btn:disabled {
+		opacity: 0.5;
+		cursor: not-allowed;
+	}
+
+	.pagination-info {
+		color: var(--color-text-muted);
+		font-size: 0.875rem;
 	}
 
 	.btn {

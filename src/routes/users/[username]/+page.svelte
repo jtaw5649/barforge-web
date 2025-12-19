@@ -7,6 +7,8 @@
 	import ModuleCard from '$lib/components/ModuleCard.svelte';
 	import Skeleton from '$lib/components/Skeleton.svelte';
 
+	let { data } = $props();
+
 	interface UserProfile {
 		id: number;
 		username: string;
@@ -81,7 +83,7 @@
 	}
 </script>
 
-<Header session={null} />
+<Header session={data.session} />
 
 <main id="main-content">
 	<nav class="breadcrumb" aria-label="Breadcrumb">

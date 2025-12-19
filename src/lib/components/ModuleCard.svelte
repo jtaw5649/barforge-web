@@ -2,6 +2,7 @@
 	import { fly } from 'svelte/transition';
 	import Badge from './Badge.svelte';
 	import Tag from './Tag.svelte';
+	import { getCategoryVariant, getCategoryColor } from '$lib/constants';
 
 	interface Props {
 		uuid: string;
@@ -35,37 +36,8 @@
 		return n.toString();
 	}
 
-	const categoryVariants: Record<
-		string,
-		'purple' | 'blue' | 'green' | 'amber' | 'pink' | 'teal' | 'gray'
-	> = {
-		system: 'purple',
-		hardware: 'green',
-		network: 'blue',
-		audio: 'pink',
-		media: 'amber',
-		productivity: 'teal',
-		weather: 'blue',
-		utility: 'gray',
-		notification: 'amber',
-		workspace: 'purple',
-		custom: 'pink',
-		theme: 'teal',
-		integration: 'green'
-	};
-
-	const categoryColors: Record<string, string> = {
-		purple: '#617dfa',
-		blue: '#06b6d4',
-		green: '#10b981',
-		amber: '#f59e0b',
-		pink: '#ec4899',
-		teal: '#14b8a6',
-		gray: '#6b7280'
-	};
-
-	const categoryVariant = $derived(categoryVariants[category.toLowerCase()] || 'gray');
-	const categoryColor = $derived(categoryColors[categoryVariant]);
+	const categoryVariant = $derived(getCategoryVariant(category));
+	const categoryColor = $derived(getCategoryColor(category));
 </script>
 
 <a
@@ -215,6 +187,7 @@
 		color: var(--color-text-muted);
 		display: -webkit-box;
 		-webkit-line-clamp: 2;
+		line-clamp: 2;
 		-webkit-box-orient: vertical;
 		overflow: hidden;
 		line-height: 1.5;

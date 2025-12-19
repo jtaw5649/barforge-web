@@ -39,8 +39,12 @@
 
 	let loading = $state(false);
 	let error: string | null = $state(null);
+	let fileError: string | null = $state(null);
 	let success = $state(false);
 	let showPreview = $state(false);
+
+	const MAX_FILE_SIZE = 10 * 1024 * 1024;
+	const ALLOWED_EXTENSIONS = ['.tar.gz', '.tgz'];
 
 	function generateUuid(): string {
 		const moduleName = name.toLowerCase().replace(/[^a-z0-9-]/g, '-');
@@ -122,7 +126,32 @@
 
 	function handleFileChange(e: Event) {
 		const target = e.target as HTMLInputElement;
-		packageFile = target.files?.[0] || null;
+		const file = target.files?.[0] || null;
+		fileError = null;
+
+		if (!file) {
+			packageFile = null;
+			return;
+		}
+
+		const fileName = file.name.toLowerCase();
+		const hasValidExtension = ALLOWED_EXTENSIONS.some((ext) => fileName.endsWith(ext));
+
+		if (!hasValidExtension) {
+			fileError = 'File must be a .tar.gz or .tgz archive';
+			packageFile = null;
+			target.value = '';
+			return;
+		}
+
+		if (file.size > MAX_FILE_SIZE) {
+			fileError = `File size must be less than 10MB (current: ${(file.size / 1024 / 1024).toFixed(1)}MB)`;
+			packageFile = null;
+			target.value = '';
+			return;
+		}
+
+		packageFile = file;
 	}
 </script>
 
@@ -130,13 +159,12 @@
 
 <main id="main-content">
 	<div class="page-header">
-		<nav class="breadcrumb" aria-label="Breadcrumb">
-			<a href="/">Home</a>
-			<span aria-hidden="true">/</span>
-			<span>Upload Module</span>
-		</nav>
-		<h1>Upload Module</h1>
-		<p>Share your Waybar module with the community</p>
+		<div class="page-header-content">
+			<div class="page-header-text">
+				<h1>Upload Module</h1>
+				<p>Share your Waybar module with the community</p>
+			</div>
+		</div>
 	</div>
 
 	<section class="content">
@@ -310,7 +338,11 @@ Supports **Markdown** formatting:
 							<span>{packageFile ? packageFile.name : 'Choose a file or drag it here'}</span>
 						</div>
 					</div>
-					<small>Max 10MB. Must be a valid tar.gz archive.</small>
+					{#if fileError}
+						<p class="field-error">{fileError}</p>
+					{:else}
+						<small>Max 10MB. Must be a valid tar.gz archive.</small>
+					{/if}
 				</div>
 
 				<div class="form-group">
@@ -346,36 +378,25 @@ Supports **Markdown** formatting:
 	}
 
 	.page-header {
-		padding: var(--space-xl) var(--space-2xl);
 		border-bottom: 1px solid var(--color-border);
 		background-color: var(--color-bg-surface);
 	}
 
-	.breadcrumb {
-		display: flex;
-		gap: var(--space-sm);
-		margin-bottom: var(--space-md);
-		font-size: 0.875rem;
-		color: var(--color-text-muted);
+	.page-header-content {
+		max-width: 1400px;
+		margin: 0 auto;
+		padding: var(--space-xl) var(--space-2xl);
 	}
 
-	.breadcrumb a {
-		color: var(--color-primary);
-		text-decoration: none;
-	}
-
-	.breadcrumb a:hover {
-		text-decoration: underline;
-	}
-
-	.page-header h1 {
-		font-size: 1.5rem;
+	.page-header-text h1 {
+		font-size: 1.75rem;
 		font-weight: 600;
+		margin-bottom: var(--space-xs);
 	}
 
-	.page-header p {
+	.page-header-text p {
 		color: var(--color-text-muted);
-		font-size: 0.875rem;
+		font-size: 0.9rem;
 	}
 
 	.content {
@@ -619,6 +640,12 @@ Supports **Markdown** formatting:
 		color: var(--color-text-faint);
 	}
 
+	.field-error {
+		font-size: 0.8125rem;
+		color: var(--color-error);
+		margin-top: var(--space-xs);
+	}
+
 	.error-banner {
 		display: flex;
 		align-items: center;
@@ -690,7 +717,7 @@ Supports **Markdown** formatting:
 	}
 
 	@media (max-width: 768px) {
-		.page-header {
+		.page-header-content {
 			padding: var(--space-lg);
 		}
 

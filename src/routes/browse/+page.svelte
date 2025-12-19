@@ -21,6 +21,7 @@
 		downloads: number;
 		rating: number | null;
 		verified_author: boolean;
+		created_at: string;
 	}
 
 	const categories = [
@@ -96,7 +97,7 @@
 				result.sort((a, b) => b.downloads - a.downloads);
 				break;
 			case 'recent':
-				result.reverse();
+				result.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 				break;
 			case 'alpha':
 				result.sort((a, b) => a.name.localeCompare(b.name));
@@ -188,9 +189,11 @@
 			</div>
 			<div class="browse-search">
 				<SearchInput
-					value={searchQuery}
+					bind:value={searchQuery}
 					placeholder="Search modules..."
 					size="md"
+					debounce={300}
+					oninput={handleSearch}
 					onsubmit={handleSearch}
 				/>
 			</div>
@@ -372,7 +375,6 @@
 	}
 
 	.browse-header {
-		padding: var(--space-xl) var(--space-2xl);
 		border-bottom: 1px solid var(--color-border);
 		background-color: var(--color-bg-surface);
 	}
@@ -380,6 +382,7 @@
 	.browse-header-content {
 		max-width: 1400px;
 		margin: 0 auto;
+		padding: var(--space-xl) var(--space-2xl);
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
