@@ -33,7 +33,10 @@
 
 <svelte:head>
 	<title>{collection.name} - Waybar Modules</title>
-	<meta name="description" content={collection.description || `A collection of ${collection.module_count} waybar modules`} />
+	<meta
+		name="description"
+		content={collection.description || `A collection of ${collection.module_count} waybar modules`}
+	/>
 </svelte:head>
 
 <Header session={data.session} />

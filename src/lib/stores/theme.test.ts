@@ -155,7 +155,7 @@ describe('theme store', () => {
 		it('detects dark system preference', async () => {
 			mockMediaQuery.matches = true;
 			mockStorage['theme'] = 'system';
-			const { theme } = await import('./theme');
+			const { theme: _theme } = await import('./theme');
 			// When system theme is applied, it should set data-theme to 'dark'
 			expect(mockSetAttribute).toHaveBeenCalledWith('data-theme', 'dark');
 		});
@@ -163,7 +163,7 @@ describe('theme store', () => {
 		it('detects light system preference', async () => {
 			mockMediaQuery.matches = false;
 			mockStorage['theme'] = 'system';
-			const { theme } = await import('./theme');
+			const { theme: _theme } = await import('./theme');
 			expect(mockSetAttribute).toHaveBeenCalledWith('data-theme', 'light');
 		});
 
