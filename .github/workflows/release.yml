@@ -13,12 +13,21 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  release-please:
-    name: Release Please
+  release:
+    name: Release
     runs-on: ubuntu-latest
-    if: github.repository_owner == 'jtaw5649'
+    if: github.event.pull_request.merged == true && github.repository_owner == 'jtaw5649'
     steps:
-      - uses: googleapis/release-please-action@v4
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - uses: changesets/action@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           config-file: release-please-config.json
