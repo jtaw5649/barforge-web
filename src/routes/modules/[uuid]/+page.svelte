@@ -133,19 +133,15 @@
 
 		try {
 			const method = userReview ? 'PUT' : 'POST';
-			const res = await fetch(
-				`${API_BASE_URL}/api/v1/modules/${encodeURIComponent(data.uuid)}/reviews`,
-				{
-					method,
-					credentials: 'include',
-					headers: { 'Content-Type': 'application/json' },
-					body: JSON.stringify({
-						rating: reviewRating,
-						title: reviewTitle || null,
-						body: reviewBody || null
-					})
-				}
-			);
+			const res = await fetch(`/api/modules/${encodeURIComponent(data.uuid)}/reviews`, {
+				method,
+				headers: { 'Content-Type': 'application/json' },
+				body: JSON.stringify({
+					rating: reviewRating,
+					title: reviewTitle || null,
+					body: reviewBody || null
+				})
+			});
 
 			if (!res.ok) {
 				const text = await res.text();
@@ -168,13 +164,9 @@
 
 		reviewLoading = true;
 		try {
-			const res = await fetch(
-				`${API_BASE_URL}/api/v1/modules/${encodeURIComponent(data.uuid)}/reviews`,
-				{
-					method: 'DELETE',
-					credentials: 'include'
-				}
-			);
+			const res = await fetch(`/api/modules/${encodeURIComponent(data.uuid)}/reviews`, {
+				method: 'DELETE'
+			});
 
 			if (!res.ok) throw new Error('Failed to delete review');
 
