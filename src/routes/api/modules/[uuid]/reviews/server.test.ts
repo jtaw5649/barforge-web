@@ -12,7 +12,7 @@ const makeEvent = (accessToken?: string) =>
 		request: {
 			json: vi.fn().mockResolvedValue({ rating: 5, title: 'Title', body: 'Body' })
 		}
-	} as unknown as ReviewEvent);
+	}) as unknown as ReviewEvent;
 
 describe('reviews api', () => {
 	beforeEach(() => {
