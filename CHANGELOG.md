@@ -1,5 +1,12 @@
 # waybar-marketplace
 
+## [0.5.3](https://github.com/jtaw5649/waybar-marketplace/compare/waybar-marketplace-v0.5.2...waybar-marketplace-v0.5.3) (2025-12-21)
+
+
+### Bug Fixes
+
+* harden admin actions and sessions ([#30](https://github.com/jtaw5649/waybar-marketplace/issues/30)) ([9c821a4](https://github.com/jtaw5649/waybar-marketplace/commit/9c821a4137619d69d60abc419e8a033be9dad1d6))
+
 ## [0.5.2](https://github.com/jtaw5649/waybar-marketplace/compare/waybar-marketplace-v0.5.1...waybar-marketplace-v0.5.2) (2025-12-21)
 
 
