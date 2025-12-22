@@ -1,5 +1,12 @@
 # waybar-marketplace
 
+## [0.5.5](https://github.com/jtaw5649/waybar-marketplace/compare/waybar-marketplace-v0.5.4...waybar-marketplace-v0.5.5) (2025-12-22)
+
+
+### Bug Fixes
+
+* **collections:** properly unwrap API response with owner info ([#34](https://github.com/jtaw5649/waybar-marketplace/issues/34)) ([ff5cfdc](https://github.com/jtaw5649/waybar-marketplace/commit/ff5cfdcecb977ea550b2e3625fed957dc06699a4))
+
 ## [0.5.4](https://github.com/jtaw5649/waybar-marketplace/compare/waybar-marketplace-v0.5.3...waybar-marketplace-v0.5.4) (2025-12-22)
 
 
