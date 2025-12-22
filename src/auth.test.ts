@@ -16,8 +16,16 @@ describe('resolveTrustHost', () => {
 		expect(resolveTrustHost('development', undefined)).toBe(true);
 	});
 
-	it('disables trustHost in production without flag', () => {
-		expect(resolveTrustHost('production', undefined)).toBe(false);
+	it('enables trustHost in production without flag', () => {
+		expect(resolveTrustHost('production', undefined)).toBe(true);
+	});
+
+	it('disables trustHost in production with false flag', () => {
+		expect(resolveTrustHost('production', 'false')).toBe(false);
+	});
+
+	it('enables trustHost in production with empty flag', () => {
+		expect(resolveTrustHost('production', '')).toBe(true);
 	});
 
 	it('enables trustHost in production with flag', () => {

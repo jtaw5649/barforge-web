@@ -80,6 +80,7 @@ export async function authSessionCallback({ session, token }: SessionCallbackPar
 
 export function resolveTrustHost(nodeEnv?: string, trustHostEnv?: string): boolean {
 	if (nodeEnv && nodeEnv !== 'production') return true;
+	if (trustHostEnv === undefined || trustHostEnv === '') return true;
 	return trustHostEnv === 'true';
 }
 
