@@ -46,9 +46,7 @@
 				>Desktop App</a
 			>
 			<a href="/modules">Registry</a>
-			<a href="https://github.com/jtaw5649/barforge-web" target="_blank" rel="noopener"
-				>GitHub</a
-			>
+			<a href="https://github.com/jtaw5649/barforge-web" target="_blank" rel="noopener">GitHub</a>
 			<a href="https://github.com/Alexays/Waybar" target="_blank" rel="noopener">Waybar</a>
 		</nav>
 

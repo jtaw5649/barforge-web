@@ -28,7 +28,8 @@
 	<title>{collection.name} - Barforge Modules</title>
 	<meta
 		name="description"
-		content={collection.description || `A collection of ${collection.module_count} Barforge modules`}
+		content={collection.description ||
+			`A collection of ${collection.module_count} Barforge modules`}
 	/>
 </svelte:head>
 

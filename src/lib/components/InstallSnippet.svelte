@@ -14,8 +14,7 @@
 			label: 'Shell',
 			icon: 'simple-icons:gnubash',
 			color: '#4EAA25',
-			command:
-				"curl -sSL https://api.barforge.dev/install | sh"
+			command: 'curl -sSL https://api.barforge.dev/install | sh'
 		},
 		{
 			id: 'aur',
@@ -303,7 +302,7 @@
 	}
 
 	@media (max-width: 640px) {
-		.terminal-actions :global([data-slot="kbd-group"]) {
+		.terminal-actions :global([data-slot='kbd-group']) {
 			display: none;
 		}
 	}

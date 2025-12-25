@@ -75,8 +75,8 @@ wrangler pages deploy .svelte-kit/cloudflare
 
 ## Related
 
-| Project                                                      | Description                                     |
-| ------------------------------------------------------------ | ----------------------------------------------- |
+| Project                                                  | Description                                     |
+| -------------------------------------------------------- | ----------------------------------------------- |
 | [barforge-app](https://github.com/jtaw5649/barforge-app) | Desktop application for managing Waybar modules |
 
 ## License

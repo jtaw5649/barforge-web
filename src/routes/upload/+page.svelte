@@ -88,12 +88,12 @@
 <main id="main-content">
 	<div class="page-header">
 		<div class="page-header-content">
-				<div class="page-header-text">
-					<h1>Upload Module</h1>
-					<p>Share your module with the community</p>
-				</div>
+			<div class="page-header-text">
+				<h1>Upload Module</h1>
+				<p>Share your module with the community</p>
 			</div>
 		</div>
+	</div>
 
 	<section class="content">
 		{#if !data.session?.user}
