@@ -75,7 +75,6 @@
 		padding: var(--space-md) var(--space-lg);
 		background-color: var(--color-bg-surface);
 		border: 1px solid var(--color-border);
-		border-radius: 9999px;
 		color: var(--color-text-faint);
 		font-size: 0.9rem;
 		cursor: pointer;

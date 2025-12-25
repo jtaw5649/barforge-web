@@ -32,9 +32,18 @@ describe('Header', () => {
 		render(Header, { session: null });
 
 		const link = screen.getByRole('link', { name: /log in/i });
-		expect(link.getAttribute('href')).toContain(
-			`redirectTo=${encodeURIComponent('/modules?sort=new')}`
-		);
+		expect(link.getAttribute('href')).toBe('/login?redirectTo=/modules%3Fsort%3Dnew');
+		expect(link.getAttribute('href')).not.toContain('%2F');
+	});
+
+	it('omits redirectTo when on the homepage', () => {
+		pageState.url.pathname = '/';
+		pageState.url.search = '';
+
+		render(Header, { session: null });
+
+		const link = screen.getByRole('link', { name: /log in/i });
+		expect(link.getAttribute('href')).toBe('/login');
 	});
 
 	it('shows authenticated actions when signed in', () => {
@@ -76,10 +85,10 @@ describe('Header', () => {
 		expect(screen.queryByRole('link', { name: /roadmap/i })).toBeNull();
 	});
 
-	it('renders subtitle MODULE REGISTRY', () => {
+	it('does not render MODULE REGISTRY subtitle', () => {
 		render(Header, { session: null });
 
-		expect(screen.getByText('MODULE REGISTRY')).toBeTruthy();
+		expect(screen.queryByText('MODULE REGISTRY')).toBeNull();
 	});
 
 	it('does not render StarsDropdown in header', () => {

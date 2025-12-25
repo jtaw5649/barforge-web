@@ -11,6 +11,7 @@ dist
 # Claude artifacts
 .claude-flow/
 .claude/
+.serena/
 CHANGELOG.md
 .github/workflows/*.yml
 .github/workflows/*.yaml
