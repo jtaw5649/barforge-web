@@ -31,8 +31,10 @@ describe('Barforge page server load', () => {
 			setHeaders: vi.fn()
 		} as never);
 
-		expect(result.stats.stars).toBe(15);
-		expect(result.stats.forks).toBe(5);
-		expect(result.stats.contributors).toBe(1);
+		expect(result).toBeDefined();
+		const { stats } = result as { stats: { stars: number; forks: number; contributors: number } };
+		expect(stats.stars).toBe(15);
+		expect(stats.forks).toBe(5);
+		expect(stats.contributors).toBe(1);
 	});
 });
