@@ -21,6 +21,12 @@
 
 ---
 
+## Screenshot
+
+<p align="center">
+  <img src="static/screenshots/homepage.png" alt="Barforge Homepage" width="800">
+</p>
+
 ## Features
 
 🔍 **Browse Modules** — Discover Waybar modules from the Barforge registry
