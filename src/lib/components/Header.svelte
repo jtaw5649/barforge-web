@@ -6,6 +6,7 @@
 	import { open } from '$lib/stores/commandPalette';
 	import { fromStore } from 'svelte/store';
 	import { theme } from '$lib/stores/theme';
+	import { cleanRedirectUrl } from '$lib/utils/url';
 	import Button from './Button.svelte';
 	import Avatar from './Avatar.svelte';
 	import SearchInput from './SearchInput.svelte';
@@ -33,9 +34,8 @@
 		signOut();
 	}
 
-	const loginUrl = $derived(
-		`/login?redirectTo=${encodeURIComponent(page.url.pathname + page.url.search)}`
-	);
+	const loginTarget = $derived(cleanRedirectUrl(page.url.pathname + page.url.search));
+	const loginUrl = $derived(loginTarget === '/' ? '/login' : `/login?redirectTo=${loginTarget}`);
 </script>
 
 <header class="site-header">
@@ -61,7 +61,6 @@
 			</svg>
 			<span class="logo-text">
 				<span class="logo-title">Barforge</span>
-				<span class="logo-subtitle">MODULE REGISTRY</span>
 			</span>
 		</a>
 
@@ -153,10 +152,12 @@
 	.header-container {
 		display: flex;
 		align-items: center;
+		justify-content: space-between;
 		gap: var(--space-lg);
 		padding: var(--space-md) var(--space-xl);
 		background: var(--color-bg-surface);
 		border-bottom: 1px solid var(--color-border);
+		position: relative;
 	}
 
 	.logo {
@@ -203,23 +204,19 @@
 	}
 
 	.logo-title {
+		font-family: var(--font-display);
 		font-size: 1.05rem;
 		font-weight: 700;
 		letter-spacing: 0.01em;
-	}
-
-	.logo-subtitle {
-		margin-top: 4px;
-		font-size: 0.65rem;
-		text-transform: uppercase;
-		letter-spacing: 0.2em;
-		color: var(--color-text-faint);
 	}
 
 	.nav-links {
 		display: flex;
 		align-items: center;
 		gap: var(--space-sm);
+		position: absolute;
+		left: 50%;
+		transform: translateX(-50%);
 	}
 
 	.nav-links a {
@@ -229,7 +226,6 @@
 		color: var(--color-text-muted);
 		text-decoration: none;
 		padding: var(--space-sm) var(--space-md);
-		border-radius: 9999px;
 		border: 1px solid transparent;
 		transition:
 			color var(--duration-fast) var(--ease-out),
@@ -255,7 +251,6 @@
 		display: flex;
 		align-items: center;
 		gap: var(--space-sm);
-		margin-left: auto;
 		flex-shrink: 0;
 	}
 
@@ -267,8 +262,7 @@
 		height: 38px;
 		padding: 0;
 		background: var(--color-bg-elevated);
-		border: 1px solid color-mix(in srgb, var(--color-border) 50%, transparent);
-		border-radius: 9999px;
+		border: 1px solid var(--color-border);
 		color: var(--color-text-muted);
 		cursor: pointer;
 		transition:
@@ -317,7 +311,6 @@
 		align-items: center;
 		justify-content: center;
 		padding: var(--space-sm) var(--space-md);
-		border-radius: 9999px;
 		font-size: 0.8125rem;
 		font-weight: 500;
 		text-decoration: none;
@@ -369,8 +362,7 @@
 		height: 40px;
 		padding: 0;
 		background: var(--color-bg-elevated);
-		border: 1px solid color-mix(in srgb, var(--color-border) 60%, transparent);
-		border-radius: 999px;
+		border: 1px solid var(--color-border);
 		color: var(--color-text-muted);
 		cursor: pointer;
 		transition:
@@ -397,10 +389,6 @@
 	@media (max-width: 1024px) {
 		.header-container {
 			padding: var(--space-md) var(--space-lg);
-		}
-
-		.logo-subtitle {
-			display: none;
 		}
 	}
 
@@ -443,7 +431,6 @@
 			right: 0;
 			background: var(--color-bg-surface);
 			border: 1px solid var(--color-border);
-			border-radius: 0.75rem;
 			padding: var(--space-md);
 			z-index: 101;
 			box-shadow: var(--shadow-lg);

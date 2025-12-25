@@ -190,10 +190,9 @@
 
 <style>
 	main {
-		min-height: 100vh;
 		display: flex;
 		flex-direction: column;
-		padding: 5rem var(--space-lg) var(--space-2xl);
+		padding: 5rem var(--space-lg) var(--space-lg);
 		gap: var(--space-lg);
 		max-width: 1000px;
 		margin: 0 auto;
@@ -204,13 +203,13 @@
 
 	@media (max-width: 768px) {
 		main {
-			padding: 4rem var(--space-md) var(--space-xl);
+			padding: 4rem var(--space-md) var(--space-md);
 		}
 	}
 
 	@media (max-width: 480px) {
 		main {
-			padding: 4rem var(--space-sm) var(--space-lg);
+			padding: 4rem var(--space-sm) var(--space-sm);
 		}
 	}
 
@@ -397,10 +396,16 @@
 
 	/* Navigation Cards */
 	.nav-body {
-		display: flex;
-		flex-direction: column;
-		gap: var(--space-sm);
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: var(--space-md);
 		padding: var(--space-md);
+	}
+
+	@media (max-width: 768px) {
+		.nav-body {
+			grid-template-columns: 1fr;
+		}
 	}
 
 	.nav-card {

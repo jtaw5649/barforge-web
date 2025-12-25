@@ -40,7 +40,7 @@
 		{
 			id: 'get-started',
 			name: 'Get Started',
-			description: 'Install Barforge',
+			description: 'Install Barforge App',
 			type: 'page',
 			path: 'https://github.com/jtaw5649/barforge-app',
 			icon: 'download'

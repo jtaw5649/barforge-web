@@ -216,6 +216,7 @@
 		{:else}
 			<div class="preview markdown-preview">
 				{#if value.trim()}
+					<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 					{@html previewHtml}
 				{:else}
 					<p class="preview-empty">Nothing to preview</p>
