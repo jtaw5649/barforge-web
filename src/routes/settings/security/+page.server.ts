@@ -3,6 +3,7 @@ import { fail } from '@sveltejs/kit';
 import { API_BASE_URL } from '$lib';
 import { acceptHeaders } from '$lib/server/authHeaders';
 import { requireAuthenticatedAction, isAuthFailure } from '$lib/server/authAction';
+import { normalizeStarsPayload } from '$lib/utils/starsResponse';
 import { Resend } from 'resend';
 
 interface UserProfile {
@@ -54,11 +55,14 @@ export const actions: Actions = {
 			fetch(`${API_BASE_URL}/api/v1/users/me/stars`, { headers })
 		]);
 
+		const modulesData = modulesRes.ok ? await modulesRes.json() : null;
+		const starsData = starsRes.ok ? await starsRes.json() : null;
+
 		const exportData: ExportData = {
 			exportedAt: new Date().toISOString(),
 			profile: profileRes.ok ? await profileRes.json() : null,
-			modules: modulesRes.ok ? await modulesRes.json() : [],
-			stars: starsRes.ok ? await starsRes.json() : []
+			modules: modulesData?.modules || [],
+			stars: normalizeStarsPayload<Module>(starsData).modules
 		};
 
 		const resend = new Resend(resendApiKey);

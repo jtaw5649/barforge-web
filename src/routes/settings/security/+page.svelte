@@ -202,9 +202,7 @@
 			<ul class="export-list">
 				<li>Profile information</li>
 				<li>Your modules and their metadata</li>
-				<li>Collections</li>
 				<li>Starred modules</li>
-				<li>Comments and reviews</li>
 			</ul>
 			<p class="modal-note">
 				You'll receive an email with a download link when your export is ready (usually within a few
