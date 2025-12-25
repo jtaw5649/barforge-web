@@ -1,23 +1,26 @@
 import { privateCacheHeaders } from '$lib/server/cacheHeaders';
 import { fetchApiJson } from '$lib/server/apiClient';
-import type { LandingData, LandingResponse } from '$lib/types';
+import type { Module } from '$lib/types';
 import type { PageServerLoad } from './$types';
+
+interface FeaturedData {
+	featured: Module[];
+	popular: Module[];
+	recent: Module[];
+}
 
 export const load: PageServerLoad = async ({ fetch, setHeaders }) => {
 	setHeaders(privateCacheHeaders);
-	const result = await fetchApiJson<LandingResponse>(fetch, '/api/v1/landing');
-	if (result.error || !result.data) {
+	const result = await fetchApiJson<FeaturedData>(fetch, '/api/v1/featured');
+	if (result.error) {
 		return {
-			landing: null as LandingData | null,
+			featuredData: null as FeaturedData | null,
 			error: result.error
 		};
 	}
 
 	return {
-		landing: {
-			stats: result.data.stats,
-			install_methods: result.data.install_methods
-		},
+		featuredData: result.data as FeaturedData,
 		error: null as string | null
 	};
 };
