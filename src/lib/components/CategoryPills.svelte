@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { Category } from '$lib/constants/categories';
+	import CategoryIcon from './CategoryIcon.svelte';
 
 	interface Props {
 		categories: Category[];
@@ -12,7 +13,7 @@
 <div class="category-pills">
 	{#each categories as cat (cat.slug)}
 		<a class="category-pill" href="{baseUrl}?category={cat.slug}" style="--cat-color: {cat.color}">
-			<img class="category-pill-icon" src={cat.icon} alt="" />
+			<CategoryIcon class="category-pill-icon" slug={cat.slug} />
 			<span class="category-pill-name">{cat.name}</span>
 		</a>
 	{/each}
@@ -50,7 +51,7 @@
 		box-shadow: 0 6px 14px rgba(15, 18, 32, 0.35);
 	}
 
-	.category-pill-icon {
+	.category-pill :global(.category-pill-icon) {
 		width: 18px;
 		height: 18px;
 		opacity: 0.85;

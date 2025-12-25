@@ -7,6 +7,7 @@
 	import { fromStore } from 'svelte/store';
 	import { theme } from '$lib/stores/theme';
 	import Button from './Button.svelte';
+	import Icon from './Icon.svelte';
 	import Avatar from './Avatar.svelte';
 	import SearchInput from './SearchInput.svelte';
 	import AvatarDropdown from './AvatarDropdown.svelte';
@@ -41,42 +42,7 @@
 <header class="site-header">
 	<div class="header-container">
 		<a href="/" class="logo" onclick={closeMobileMenu}>
-			<svg
-				class="logo-mark"
-				width="32"
-				height="32"
-				viewBox="8 8 112 112"
-				fill="none"
-				aria-hidden="true"
-			>
-				<defs>
-					<linearGradient id="logoGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-						<stop offset="0%" stop-color="#617DFA" />
-						<stop offset="100%" stop-color="#8B5CF6" />
-					</linearGradient>
-				</defs>
-				<rect
-					x="10"
-					y="44"
-					width="108"
-					height="40"
-					rx="12"
-					fill="var(--color-bg-elevated)"
-					stroke="url(#logoGrad)"
-					stroke-width="4"
-				/>
-				<rect x="18" y="52" width="24" height="24" rx="6" fill="url(#logoGrad)" />
-				<rect x="48" y="52" width="36" height="24" rx="6" fill="var(--color-border)" />
-				<rect
-					x="90"
-					y="52"
-					width="20"
-					height="24"
-					rx="6"
-					fill="var(--color-border)"
-					fill-opacity="0.5"
-				/>
-			</svg>
+			<Icon name="logo" size={32} class="logo-mark" ariaLabel="Barforge" />
 			<span class="logo-text">
 				<span class="logo-title">Barforge</span>
 				<span class="logo-subtitle">MODULE REGISTRY</span>
@@ -191,7 +157,7 @@
 		transform: scale(1.02);
 	}
 
-	.logo-mark {
+	.logo :global(.logo-mark) {
 		color: var(--color-primary);
 		filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.3));
 	}

@@ -1,43 +1,11 @@
+<script lang="ts">
+	import Icon from './Icon.svelte';
+</script>
+
 <footer>
 	<div class="footer-content">
 		<a href="/" class="footer-brand">
-			<svg
-				class="footer-logo"
-				width="24"
-				height="24"
-				viewBox="8 8 112 112"
-				fill="none"
-				xmlns="http://www.w3.org/2000/svg"
-				aria-hidden="true"
-			>
-				<defs>
-					<linearGradient id="footerLogoGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-						<stop offset="0%" stop-color="#617DFA" />
-						<stop offset="100%" stop-color="#8B5CF6" />
-					</linearGradient>
-				</defs>
-				<rect
-					x="10"
-					y="44"
-					width="108"
-					height="40"
-					rx="12"
-					fill="var(--color-bg-elevated)"
-					stroke="url(#footerLogoGrad)"
-					stroke-width="4"
-				/>
-				<rect x="18" y="52" width="24" height="24" rx="6" fill="url(#footerLogoGrad)" />
-				<rect x="48" y="52" width="36" height="24" rx="6" fill="var(--color-border)" />
-				<rect
-					x="90"
-					y="52"
-					width="20"
-					height="24"
-					rx="6"
-					fill="var(--color-border)"
-					fill-opacity="0.5"
-				/>
-			</svg>
+			<Icon name="logo" size={24} class="footer-logo" ariaLabel="Barforge" />
 			<span class="footer-name">Barforge</span>
 		</a>
 
@@ -93,7 +61,7 @@
 		text-decoration: none;
 	}
 
-	.footer-logo {
+	.footer-brand :global(.footer-logo) {
 		flex-shrink: 0;
 	}
 
